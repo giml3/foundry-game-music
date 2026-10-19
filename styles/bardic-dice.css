@@ -1,0 +1,14 @@
+/* Bardic Dice — status popover + chat cards */
+.bardic-dice-status { padding: 0.5rem 0.75rem; min-width: 280px; }
+.bardic-dice-status h3 { margin: 0 0 0.5rem; display: flex; gap: 0.5rem; align-items: center; }
+.bardic-dice-status .bd-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.2rem 0; }
+.bardic-dice-status .bd-label { opacity: 0.75; }
+.bardic-dice-status .bd-health-ok { color: var(--color-level-success, #4caf50); }
+.bardic-dice-status .bd-health-bad { color: var(--color-level-error, #e53935); }
+.bardic-dice-status .bd-why { font-style: italic; margin-top: 0.5rem; }
+.bardic-dice-status .bd-buttons { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
+.bardic-dice-status .bd-buttons button { flex: 1 1 auto; }
+.bardic-dice-card { border-left: 3px solid #b8860b; padding-left: 0.5rem; }
+.bardic-dice-card h4 { margin: 0.2rem 0; }
+.bardic-dice-card .bd-lyrics { white-space: pre-wrap; font-style: italic; }
+.bardic-dice-card .bd-stats { margin: 0.3rem 0 0 1rem; }

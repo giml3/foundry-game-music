@@ -1,0 +1,21 @@
+<div class="bardic-dice-status">
+  <h3><i class="fa-solid fa-music"></i> Bardic Dice</h3>
+  <div class="bd-row"><span class="bd-label">State</span><span>{{state}}</span></div>
+  <div class="bd-row"><span class="bd-label">Mode</span><span>{{mode}}</span></div>
+  <div class="bd-row"><span class="bd-label">Now playing</span><span>{{nowPlaying}}</span></div>
+  <div class="bd-row"><span class="bd-label">Next track</span><span>{{nextTrack}}</span></div>
+  <div class="bd-row"><span class="bd-label">ACE-Step</span>
+    {{#if healthOk}}<span class="bd-health-ok">● reachable</span>{{else}}<span class="bd-health-bad">● unreachable</span>{{/if}}
+  </div>
+  <div class="bd-row"><span class="bd-label">Session log</span><span>{{logSummary}}</span></div>
+  {{#if why}}<p class="bd-why">♪ {{why}}</p>{{/if}}
+  {{#if isGM}}
+  <div class="bd-buttons">
+    <button type="button" data-action="bd-start"><i class="fa-solid fa-play"></i> Start</button>
+    <button type="button" data-action="bd-pause"><i class="fa-solid fa-pause"></i> Pause</button>
+    <button type="button" data-action="bd-stop"><i class="fa-solid fa-stop"></i> Stop</button>
+    <button type="button" data-action="bd-break"><i class="fa-solid fa-mug-hot"></i> On Break</button>
+    <button type="button" data-action="bd-refresh"><i class="fa-solid fa-rotate"></i> Refresh</button>
+  </div>
+  {{/if}}
+</div>

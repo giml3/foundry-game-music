@@ -1,0 +1,51 @@
+@echo off
+REM Bardic Dice - local LLM setup (Windows). Installs Ollama via winget if
+REM needed, starts its server, pulls the recap-writer model, smoke-tests it.
+REM Override the model:  set BARDIC_LLM_MODEL=qwen2.5:7b  before running.
+setlocal
+if "%BARDIC_LLM_MODEL%"=="" set BARDIC_LLM_MODEL=llama3.1
+set OLLAMA_BASE=http://127.0.0.1:11434
+
+where ollama >nul 2>nul
+if %errorlevel%==0 goto have_ollama
+echo Installing Ollama with winget...
+where winget >nul 2>nul
+if %errorlevel% neq 0 (
+  echo winget not found. Install Ollama manually from https://ollama.com/download then re-run.
+  exit /b 1
+)
+winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements
+REM The Ollama app normally autostarts its server; a fresh terminal picks up PATH.
+set "PATH=%PATH%;%LOCALAPPDATA%\Programs\Ollama"
+
+:have_ollama
+curl -fsS --max-time 3 %OLLAMA_BASE%/api/tags >nul 2>nul
+if %errorlevel%==0 goto is_up
+echo Starting Ollama server...
+start "" /min ollama serve
+for /l %%i in (1,1,30) do (
+  curl -fsS --max-time 3 %OLLAMA_BASE%/api/tags >nul 2>nul && goto is_up
+  timeout /t 1 /nobreak >nul
+)
+echo Ollama did not come up on %OLLAMA_BASE%.
+exit /b 1
+
+:is_up
+echo Ollama server is up on %OLLAMA_BASE%
+echo Pulling model %BARDIC_LLM_MODEL% (first run downloads a few GB)...
+ollama pull %BARDIC_LLM_MODEL%
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+echo Smoke-testing %OLLAMA_BASE%/v1/chat/completions ...
+curl -fsS --max-time 120 %OLLAMA_BASE%/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"%BARDIC_LLM_MODEL%\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly one word: ready\"}]}" | findstr /i "ready" >nul
+if %errorlevel% neq 0 (
+  echo Smoke test failed - see output above.
+  exit /b 1
+)
+echo.
+echo Local LLM is running. In Foundry (Module Settings, Bardic Dice) set:
+echo   Enable External LLM Recap Writer : on
+echo   Summarizer API URL               : %OLLAMA_BASE%/v1
+echo   Summarizer Model                 : %BARDIC_LLM_MODEL%
+echo   Summarizer API Key               : (leave blank)
+endlocal

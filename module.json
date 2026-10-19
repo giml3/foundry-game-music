@@ -1,0 +1,34 @@
+{
+  "id": "foundry-game-music",
+  "title": "Bardic Dice — ACE-Step Tavern Music",
+  "description": "Generates bawdy tavern music with a local ACE-Step 1.5 sidecar, steered by live dice rolls and chat. Speeds up in combat, and sings a recap ballad of the last 2-3 hours on break.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "giml3",
+      "url": "https://github.com/giml3"
+    }
+  ],
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/bardic-dice.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "socket": true,
+  "url": "https://github.com/giml3/foundry-game-music",
+  "license": "MIT",
+  "manifest": "https://raw.githubusercontent.com/giml3/foundry-game-music/main/module.json",
+  "download": "https://github.com/giml3/foundry-game-music/releases/download/v0.1.0/foundry-game-music.zip"
+}
