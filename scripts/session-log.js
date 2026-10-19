@@ -58,8 +58,136 @@ export function parseRoll(roll) {
   };
 }
 
+const clamp01 = (n) => Math.min(1, Math.max(0, n));
+
+/**
+ * Parse a WFRP4e (Warhammer Fantasy Roleplay 4th ed.) test payload.
+ * Mirrors the system's own rule (TestWFRP.isCriticalFumble): a doubles roll
+ * (11, 22, … 99) at or under the target is a Critical, doubles over the
+ * target — plus 99 and 100 — are Fumbles. Explicit system labels win.
+ * @param {object} test plain {result:{roll,target,outcome,critical,fumble,hitloc,damage}, isCriticalFumble}
+ */
+export function parseWfrpTest(test) {
+  const r = test?.result;
+  if (!r) return null;
+  const roll = Number(r.roll);
+  if (!Number.isFinite(roll)) return null;
+  const target = Number(r.target);
+  const hasTarget = Number.isFinite(target);
+  let icf = typeof test.isCriticalFumble === "string" ? test.isCriticalFumble : "";
+  if (!icf && r.critical) icf = "critical";
+  if (!icf && r.fumble) icf = "fumble";
+  if (!icf && hasTarget) {
+    if ((roll > target && roll % 11 === 0) || roll === 100 || roll === 99) icf = "fumble";
+    else if (roll <= target && roll % 11 === 0) icf = "critical";
+  }
+  const succeeded = r.outcome ? r.outcome === "success" : (hasTarget ? (roll <= target || roll === 1) && roll !== 100 : false);
+  const normalized = hasTarget ? clamp01((target - roll + 50) / 100) : clamp01((101 - roll) / 100);
+  const rawDamage = typeof r.damage === "number" ? r.damage : Number(r.damage?.value);
+  return {
+    roll, target: hasTarget ? target : null, succeeded,
+    isCrit: icf === "critical", isFumble: icf === "fumble", isCriticalFumble: icf,
+    normalized,
+    damage: Number.isFinite(rawDamage) && rawDamage > 0 ? rawDamage : null,
+    hitloc: r.hitloc?.result ?? (typeof r.hitloc === "string" ? r.hitloc : null) ?? r.hitLocation ?? null,
+  };
+}
+
+/**
+ * Extract a plain WFRP4e test payload from a live ChatMessage-like object.
+ * The system stores the recreated test at `message.system.test`; every getter
+ * is read defensively because opposed/legacy messages may be incomplete.
+ */
+export function wfrpTestPayloadFromMessage(message) {
+  try {
+    const test = message?.system?.test;
+    const result = test?.result;
+    if (!test || !result || !Number.isFinite(Number(result.roll))) return null;
+    let isCriticalFumble = "";
+    try { if (typeof test.isCriticalFumble === "string") isCriticalFumble = test.isCriticalFumble; } catch { /* derive later */ }
+    let damage = null;
+    try {
+      const raw = typeof result.damage === "number" || typeof result.damage?.value === "number"
+        ? (result.damage?.value ?? result.damage)
+        : test.damage;
+      const parsed = typeof raw === "number" ? raw : Number(raw?.value ?? raw);
+      if (Number.isFinite(parsed)) damage = parsed;
+    } catch { /* damage is optional flavour */ }
+    let hitloc = null;
+    try {
+      hitloc = result.hitloc?.result ?? (typeof result.hitloc === "string" ? result.hitloc : null) ?? result.hitLocation ?? null;
+      if (typeof hitloc !== "string") hitloc = null;
+    } catch { /* optional */ }
+    return {
+      isCriticalFumble,
+      result: {
+        roll: result.roll,
+        target: result.target,
+        outcome: result.outcome,
+        critical: result.critical,
+        fumble: result.fumble,
+        hitloc,
+        damage,
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Convert an owned WFRP4e Critical Wound item into a muse event. */
+export function critWoundEventFromItem(item, now = Date.now()) {
+  if (!item || item.type !== "critical" || !item.parent) return null;
+  if (item.parent.documentName && item.parent.documentName !== "Actor") return null;
+  const rawLocation = item.system?.location;
+  const location = typeof rawLocation === "string"
+    ? rawLocation
+    : (typeof rawLocation?.key === "string" && rawLocation.key
+      ? rawLocation.key
+      : (typeof rawLocation?.value === "string" ? rawLocation.value : null));
+  return {
+    kind: "critwound",
+    ts: now,
+    actor: String(item.parent?.name ?? item.actor?.name ?? "Someone"),
+    name: sanitizeChatText(item.name ?? "Critical Wound", 120) || "Critical Wound",
+    location,
+  };
+}
+
+/** Return a Corruption muse event only when the point total actually rose. */
+export function corruptionGainEvent(previousValue, currentValue, actor, now = Date.now()) {
+  const previous = Number(previousValue);
+  const current = Number(currentValue);
+  if (!Number.isFinite(previous) || !Number.isFinite(current) || current <= previous) return null;
+  return {
+    kind: "corruption",
+    ts: now,
+    actor: String(actor ?? "Someone"),
+    points: current - previous,
+  };
+}
+
 /** Build a roll event from a Foundry-like chat message, or null if it has no rolls. */
 export function rollEventFromMessage(msg, now = Date.now()) {
+  const wfrp = msg?.wfrpTest ? parseWfrpTest(msg.wfrpTest) : null;
+  if (wfrp) {
+    return {
+      kind: "roll",
+      ts: Number(msg?.timestamp) || now,
+      actor: String(msg?.speaker?.alias ?? msg?.alias ?? "Someone"),
+      flavor: sanitizeChatText(msg?.flavor ?? "", 120),
+      formula: "1d100",
+      total: wfrp.roll,
+      isCrit: wfrp.isCrit,
+      isFumble: wfrp.isFumble,
+      normalized: wfrp.normalized,
+      natural: wfrp.roll,
+      damage: wfrp.damage,
+      target: wfrp.target,
+      system: "wfrp4e",
+      rollCount: 1,
+    };
+  }
   const rolls = Array.isArray(msg?.rolls) ? msg.rolls : [];
   if (!rolls.length) return null;
   const parsed = rolls.map(parseRoll).filter(Boolean);
@@ -147,6 +275,20 @@ export class SessionLog {
       .slice(-limit);
   }
 
+  /** Corruption points gained in the muse window (WFRP4e). */
+  museCorruption(now = Date.now(), limit = 4) {
+    return this.events
+      .filter((e) => e.kind === "corruption" && e.ts >= now - MUSE_WINDOW_MS)
+      .slice(-limit);
+  }
+
+  /** Critical Wounds suffered in the muse window (WFRP4e grim spice). */
+  museWounds(now = Date.now(), limit = 4) {
+    return this.events
+      .filter((e) => e.kind === "critwound" && e.ts >= now - MUSE_WINDOW_MS)
+      .slice(-limit);
+  }
+
   /** Events the break ballad should cover: since last checkpoint, else last 3h. */
   breakWindow(now = Date.now()) {
     const since = this.checkpointTs > 0 ? this.checkpointTs : now - LOG_WINDOW_MS;
@@ -161,6 +303,7 @@ export class SessionLog {
       rolls: w.filter((e) => e.kind === "roll").length,
       chats: w.filter((e) => e.kind === "chat").length,
       combats: w.filter((e) => e.kind === "combat" && e.phase === "start").length,
+      wounds: w.filter((e) => e.kind === "critwound").length,
       total: this.events.length,
       sinceTs: w[0]?.ts ?? null,
     };

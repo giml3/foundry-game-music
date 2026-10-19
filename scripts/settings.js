@@ -24,6 +24,7 @@ export function registerSettings() {
   s("volume", { name: L("Volume"), scope: "world", config: true, type: Number, default: 0.6, range: { min: 0.05, max: 1, step: 0.05 } });
   s("uploadFolder", { name: L("UploadFolder"), hint: L("UploadFolderHint"), scope: "world", config: true, type: String, default: "bardic-dice" });
   s("journalRecap", { name: L("JournalRecap"), scope: "world", config: true, type: Boolean, default: true });
+  s("corruptionSting", { name: L("CorruptionSting"), hint: L("CorruptionStingHint"), scope: "world", config: true, type: Boolean, default: true });
   s("summarizerEnabled", { name: L("SummarizerEnabled"), hint: L("SummarizerEnabledHint"), scope: "world", config: true, type: Boolean, default: false });
   s("summarizerBaseUrl", { name: L("SummarizerBaseUrl"), hint: L("SummarizerBaseUrlHint"), scope: "world", config: true, type: String, default: "http://127.0.0.1:11434/v1" });
   s("summarizerApiKey", { name: L("SummarizerApiKey"), scope: "world", config: true, type: String, default: "" });
@@ -41,6 +42,7 @@ export function getConfig() {
     bawdy: g("bawdyLevel"), autoCombat: g("autoCombat"), vocalLanguage: g("vocalLanguage"),
     includeSecret: g("includeSecret"), volume: g("volume"), uploadFolder: g("uploadFolder"),
     journalRecap: g("journalRecap"),
+    corruptionSting: g("corruptionSting"),
     summarizerEnabled: g("summarizerEnabled"), summarizerBaseUrl: g("summarizerBaseUrl"),
     summarizerApiKey: g("summarizerApiKey"), summarizerModel: g("summarizerModel"),
   };

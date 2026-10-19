@@ -36,3 +36,23 @@ test("track filenames are timestamped and mode-tagged", () => {
   const f = trackFilename("combat", 3, new Date(2026, 9, 19, 1, 2, 3));
   assert.equal(f, "bardic-20261019-010203-3-combat.mp3");
 });
+
+test("corruption sting broadcasts once and obeys its cooldown", async () => {
+  const { BardicPlayer } = await import("../scripts/player-engine.js");
+  const { SessionLog: Log } = await import("../scripts/session-log.js");
+  const calls = [];
+  globalThis.AudioHelper = { play: async (...args) => { calls.push(args); return {}; } };
+  try {
+    const player = new BardicPlayer({
+      sessionLog: new Log(),
+      getConfig: () => ({ corruptionSting: true, volume: 0.5 }),
+    });
+    assert.equal(await player.playCorruptionSting("Brunhilde"), true);
+    assert.equal(await player.playCorruptionSting("Brunhilde"), false);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0][0].src, /assets\/corruption-sting\.wav$/);
+    assert.equal(calls[0][1], true, "sting is broadcast to other clients");
+  } finally {
+    delete globalThis.AudioHelper;
+  }
+});

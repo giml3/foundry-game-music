@@ -38,7 +38,7 @@ export class BardicStatusApp extends foundry.applications.api.HandlebarsApplicat
       healthOk: s.healthOk === true,
       why: s.why ?? "",
       isGM: game.user?.isGM === true,
-      logSummary: `${sum.rolls} rolls · ${sum.chats} chats · ${sum.combats} combats`,
+      logSummary: `${sum.rolls} rolls · ${sum.chats} chats · ${sum.combats} combats${sum.wounds ? ` · ${sum.wounds} critical wounds` : ""}`,
     };
   }
 

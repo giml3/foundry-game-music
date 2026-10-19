@@ -49,7 +49,9 @@
       "UploadFolder": "Generated Music Folder",
       "UploadFolderHint": "Folder (under the Foundry data source) where generated MP3s are uploaded so players can hear them.",
       "Volume": "Bardic Dice Volume",
-      "JournalRecap": "Save Break Recaps to a Journal"
+      "JournalRecap": "Save Break Recaps to a Journal",
+      "CorruptionSting": "Sad Sting on Corruption (WFRP4e)",
+      "CorruptionStingHint": "Play a short discordant sting for everyone when an actor gains a Corruption point, and sour the next track briefly."
     }
   }
 }

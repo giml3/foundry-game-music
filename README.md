@@ -1,12 +1,23 @@
-# Bardic Dice — ACE-Step Tavern Music for Foundry VTT v14
+# Bardic Dice — WFRP4e ACE-Step Tavern Music for Foundry VTT v14
 
-A Foundry VTT **v14** module (`foundry-game-music`) that generates a live,
-bawdy tavern soundtrack with a local [ACE-Step 1.5](https://github.com/ACE-Step/ACE-Step-1.5)
-sidecar. The music listens to your table:
+A Foundry VTT **v14** module (`foundry-game-music`) for **Warhammer Fantasy
+Roleplay 4th Edition** that generates a live, bawdy solo-bard soundtrack with
+a local [ACE-Step 1.5](https://github.com/ACE-Step/ACE-Step-1.5) sidecar.
+The music listens to your table:
 
-- **Dice steer the songs.** Crits make the next track rowdier and faster and
-  earn the roller a heroic verse; fumbles earn a mocking verse and, in
+- **WFRP dice steer the songs.** Doubles under the target are Criticals and
+  doubles over it — plus 99/100 — are Fumbles, following the system test
+  result. Criticals earn heroic verses; Fumbles earn mocking verses and, in
   numbers, a drunken 3/4 waltz. Recent public chat seasons the lyrics.
+- **Critical Wounds turn the music grim.** A newly applied WFRP Critical
+  Wound slows and darkens a tavern track, intensifies combat, and is named
+  in the next verse and break recap.
+- **Corruption sounds wrong immediately.** When an actor gains Corruption,
+  everyone hears a short sad discordant sting; the next generated track
+  also gets a brief sour, detuned passage.
+- **No townspeople during play.** Tavern and combat tracks use one bard and
+  explicitly exclude crowd noise/chatter. The full crowd only returns for
+  the On Break ballad.
 - **Combat speeds up.** Starting combat switches to a faster battle jig —
   war drum, hurdy-gurdy, roughly +35 BPM in a minor key — landing on the
   next track. Ending combat drifts back to tavern tempo.
@@ -79,9 +90,10 @@ api.openStatus();
 ## Notes & limits
 
 - Foundry **v14 only** (uses the v14 object-keyed scene-controls API).
-  System-agnostic: crits/fumbles come from natural d20s plus any
-  `isCritical`/`isFumble` flags your system sets; other dice still
-  steer tempo by how hot the rolling runs.
+  WFRP4e is the primary verified system: tests are read from
+  `message.system.test`, Critical Wounds from owned `critical` items, and
+  Corruption from `system.status.corruption.value`. Generic natural-d20
+  and `isCritical`/`isFumble` detection remains as a fallback elsewhere.
 - Pause stores the position in the PlaylistSound (`pausedTime`) and
   resumes for everyone at once.
 - Generated MP3s accumulate in the configured upload folder

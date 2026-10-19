@@ -130,8 +130,31 @@ export class BardicPlayer {
     const now = Date.now();
     return buildTrackRequest({
       mode, rolls: this.log.museRolls(now), chats: this.log.museChat(now),
+      wounds: this.log.museWounds?.(now) ?? [], corruptions: this.log.museCorruption?.(now) ?? [],
       bawdy: c.bawdy, tavernDuration: c.tavernDuration, combatDuration: c.combatDuration,
     });
+  }
+
+  /**
+   * Immediate sad discordant sting (bundled asset, broadcast to all clients)
+   * when a player gains Corruption. Cooldown-guarded so multi-point updates
+   * do not machine-gun. @returns {Promise<boolean>} true if a sting played.
+   */
+  async playCorruptionSting(actorName = "") {
+    const now = Date.now();
+    if (this._lastStingAt && now - this._lastStingAt < 4000) return false;
+    const c = this.getConfig();
+    if (c.corruptionSting === false) return false;
+    this._lastStingAt = now;
+    const src = `modules/${MODULE_ID}/assets/corruption-sting.wav`;
+    const volume = Math.min(1, (c.volume ?? 0.6) * 1.1);
+    try {
+      const helper = globalThis.AudioHelper ?? globalThis.foundry?.audio?.AudioHelper;
+      if (helper?.play) { await helper.play({ src, volume, loop: false }, true); return true; }
+      const Sound = globalThis.foundry?.audio?.Sound;
+      if (Sound) { const s = new Sound(src); await s.load(); await s.play({ volume }); return true; }
+    } catch (e) { console.warn(`${MODULE_ID} | corruption sting failed for ${actorName}`, e); }
+    return false;
   }
 
   async playTrack(track) {
