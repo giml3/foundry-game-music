@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSceneControl } from "../scripts/controls.js";
-import { escapeHtml, trackFilename } from "../scripts/player-engine.js";
+import { escapeHtml, nextKindToGenerate, trackFilename } from "../scripts/player-engine.js";
 
 test("scene control has the v14 shape: name/order/icon + button tools keyed by name", () => {
   const calls = [];
@@ -55,4 +55,10 @@ test("corruption sting broadcasts once and obeys its cooldown", async () => {
   } finally {
     delete globalThis.AudioHelper;
   }
+});
+
+test("queue alternates vocal songs with instrumental bridges", () => {
+  assert.equal(nextKindToGenerate("vocal"), "bridge");
+  assert.equal(nextKindToGenerate("bridge"), "vocal");
+  assert.equal(nextKindToGenerate(null), "vocal");
 });

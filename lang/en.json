@@ -51,7 +51,9 @@
       "Volume": "Bardic Dice Volume",
       "JournalRecap": "Save Break Recaps to a Journal",
       "CorruptionSting": "Sad Sting on Corruption (WFRP4e)",
-      "CorruptionStingHint": "Play a short discordant sting for everyone when an actor gains a Corruption point, and sour the next track briefly."
+      "CorruptionStingHint": "Play a short discordant sting for everyone when an actor gains a Corruption point, and sour the next track briefly.",
+      "BridgeDuration": "Instrumental Bridge Length (seconds)",
+      "BridgeDurationHint": "Long instrumental bridges loop between vocal songs (and across tavern/combat style changes) to pad time while the next song composes."
     }
   }
 }

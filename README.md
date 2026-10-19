@@ -25,6 +25,12 @@ The music listens to your table:
   ballad of the last 2–3 hours (top critter, worst fumbler, biggest roll,
   running table talk), posts the lyrics and stats to chat, and optionally
   files them in a "Session Ballads" journal.
+- **Songs loop; bridges pad the gaps.** Vocal songs are long (3 minutes by
+  default) and loop as one continuous performance: the chorus hook stays
+  while every lap sings fresh verses about the latest rolls and chat.
+  Between songs — and across tavern/combat style changes — long
+  instrumental bridges loop seamlessly (tempo-blended on a style switch),
+  so the music never goes silent while the next song is composing.
 - **One button on the left toolbar.** A music-note scene control opens the
   submenu: **Start · Pause/Resume · Stop · On Break · Status**.
 
@@ -99,7 +105,7 @@ api.openStatus();
 - Generated MP3s accumulate in the configured upload folder
   (default `bardic-dice/`); old playlist *entries* are pruned, files are
   yours to keep or clean out between campaigns. On The Forge, uploads
-  go to your Assets library quota — 90-second MP3s are ~1–2 MB each.
+  go to your Assets library quota — 3-minute MP3s are ~3–5 MB each.
 - HTTPS Foundry + `http://127.0.0.1:8001` sidecar works in Chromium
   (localhost is trustworthy). A sidecar on another host needs HTTPS and
   CORS for your Foundry origin.

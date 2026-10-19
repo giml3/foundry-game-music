@@ -11,9 +11,10 @@ export function registerSettings() {
   s("aceModel", { name: L("AceModel"), hint: L("AceModelHint"), scope: "world", config: true, type: String, default: DEFAULT_ACE_MODEL });
   s("inferenceSteps", { name: L("InferenceSteps"), hint: L("InferenceStepsHint"), scope: "world", config: true, type: Number, default: 8, range: { min: 1, max: 200, step: 1 } });
   s("thinking", { name: L("Thinking"), hint: L("ThinkingHint"), scope: "world", config: true, type: Boolean, default: true });
-  s("tavernDuration", { name: L("TavernDuration"), scope: "world", config: true, type: Number, default: 90, range: { min: 30, max: 300, step: 10 } });
-  s("combatDuration", { name: L("CombatDuration"), scope: "world", config: true, type: Number, default: 90, range: { min: 30, max: 300, step: 10 } });
-  s("breakDuration", { name: L("BreakDuration"), scope: "world", config: true, type: Number, default: 240, range: { min: 60, max: 600, step: 10 } });
+  s("tavernDuration", { name: L("TavernDuration"), scope: "world", config: true, type: Number, default: 180, range: { min: 30, max: 300, step: 10 } });
+  s("combatDuration", { name: L("CombatDuration"), scope: "world", config: true, type: Number, default: 180, range: { min: 30, max: 300, step: 10 } });
+  s("bridgeDuration", { name: L("BridgeDuration"), hint: L("BridgeDurationHint"), scope: "world", config: true, type: Number, default: 180, range: { min: 60, max: 300, step: 10 } });
+  s("breakDuration", { name: L("BreakDuration"), scope: "world", config: true, type: Number, default: 300, range: { min: 60, max: 600, step: 10 } });
   s("bawdyLevel", {
     name: L("BawdyLevel"), scope: "world", config: true, type: String, default: Bawdy.BAWDY,
     choices: { clean: L("BawdyClean"), bawdy: L("BawdyBawdy"), filthy: L("BawdyFilthy") },
@@ -38,7 +39,7 @@ export function getConfig() {
   return {
     aceBaseUrl: g("aceBaseUrl"), aceApiKey: g("aceApiKey"), aceModel: g("aceModel"),
     inferenceSteps: g("inferenceSteps"), thinking: g("thinking"),
-    tavernDuration: g("tavernDuration"), combatDuration: g("combatDuration"), breakDuration: g("breakDuration"),
+    tavernDuration: g("tavernDuration"), combatDuration: g("combatDuration"), bridgeDuration: g("bridgeDuration"), breakDuration: g("breakDuration"),
     bawdy: g("bawdyLevel"), autoCombat: g("autoCombat"), vocalLanguage: g("vocalLanguage"),
     includeSecret: g("includeSecret"), volume: g("volume"), uploadFolder: g("uploadFolder"),
     journalRecap: g("journalRecap"),

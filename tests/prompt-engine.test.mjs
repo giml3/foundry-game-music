@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTrackRequest, extractFeatures, museSignificance } from "../scripts/prompt-engine.js";
+import { buildBridgeRequest, buildTrackRequest, extractFeatures, museSignificance } from "../scripts/prompt-engine.js";
 import { Mode } from "../scripts/constants.js";
 
 const roll = (o) => ({ actor: "Aria", total: 10, normalized: 0.5, isCrit: false, isFumble: false, flavor: "", ...o });
@@ -53,6 +53,41 @@ test("bawdy levels change the prompt register", () => {
   assert.match(buildTrackRequest({ bawdy: "clean" }).prompt, /family-friendly/);
   assert.match(buildTrackRequest({ bawdy: "bawdy" }).prompt, /bawdy medieval drinking song/);
   assert.match(buildTrackRequest({ bawdy: "filthy" }).prompt, /raunchy/);
+});
+
+test("tracks default to long loop-friendly durations with seamless-loop tags", () => {
+  const t = buildTrackRequest({ mode: Mode.TAVERN, rolls: [roll({})] });
+  const c = buildTrackRequest({ mode: Mode.COMBAT, rolls: [roll({})] });
+  assert.equal(t.duration, 180);
+  assert.equal(c.duration, 180);
+  assert.match(t.prompt, /seamless loop/);
+  assert.match(c.prompt, /seamless loop/);
+});
+
+test("each loop keeps the chorus but varies the verses", () => {
+  const rolls = [roll({ isCrit: true, normalized: 1, total: 20 }), roll({ actor: "Bram", isFumble: true, normalized: 0, total: 1 })];
+  const loop0 = buildTrackRequest({ rolls, loopIndex: 0 });
+  const loop1 = buildTrackRequest({ rolls, loopIndex: 1, recentVerses: loop0.verseLines });
+  const chorus = (lyrics) => lyrics.split("[Chorus]")[1]?.split("\n").filter(Boolean)[0];
+  assert.equal(chorus(loop0.lyrics), chorus(loop1.lyrics), "chorus hook is stable across loops");
+  assert.ok(loop0.verseLines.length >= 2 && loop1.verseLines.length >= 2, "two verses worth of lines");
+  assert.notDeepEqual(loop1.verseLines, loop0.verseLines, "verses change per loop");
+  for (const line of loop1.verseLines) assert.ok(!loop0.verseLines.includes(line), `loop 1 must not repeat loop 0 line: ${line}`);
+  assert.match(loop1.lyrics, /\[Verse 2\]/);
+});
+
+test("bridges are long instrumentals that blend tempos between styles", () => {
+  const rolls = [roll({}), roll({})];
+  const bridge = buildBridgeRequest({ mode: Mode.COMBAT, fromMode: Mode.TAVERN, rolls });
+  const tavern = buildTrackRequest({ mode: Mode.TAVERN, rolls });
+  const combat = buildTrackRequest({ mode: Mode.COMBAT, rolls });
+  assert.equal(bridge.instrumental, true);
+  assert.match(bridge.prompt, /instrumental/);
+  assert.match(bridge.prompt, /seamless loop/);
+  assert.doesNotMatch(bridge.lyrics, /\[Verse/);
+  assert.equal(bridge.duration, 180);
+  assert.ok(bridge.bpm > tavern.bpm && bridge.bpm < combat.bpm, `bridge ${bridge.bpm} between tavern ${tavern.bpm} and combat ${combat.bpm}`);
+  assert.match(bridge.why, /bridge/);
 });
 
 test("significance scores crits and fumbles heavily", () => {

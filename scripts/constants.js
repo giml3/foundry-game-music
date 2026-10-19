@@ -31,3 +31,10 @@ export const LOG_MAX_EVENTS = 2000;
 /** Window the *next-track* muse looks at. */
 export const MUSE_WINDOW_MS = 5 * 60 * 1000;
 export const MUSE_MAX_ROLLS = 12;
+
+/** Loop playback: vocal songs alternate with instrumental bridges. */
+export const CROSSFADE_MS = 4000;
+/** A bridge plays at least this long before yielding to the next vocal song. */
+export const BRIDGE_MIN_SEC = 25;
+/** While a bridge (or loop-hold) plays, re-check for the next vocal this often. */
+export const BRIDGE_CHECK_SEC = 15;
