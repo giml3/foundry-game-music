@@ -1,6 +1,6 @@
 {
   "name": "foundry-game-music",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Dev/test harness only — Foundry loads module.json, not this file.",

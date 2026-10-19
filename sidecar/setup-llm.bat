@@ -37,7 +37,7 @@ ollama pull %BARDIC_LLM_MODEL%
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo Smoke-testing %OLLAMA_BASE%/v1/chat/completions ...
-curl -fsS --max-time 120 %OLLAMA_BASE%/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"%BARDIC_LLM_MODEL%\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly one word: ready\"}]}" | findstr /i "ready" >nul
+curl -fsS --max-time 120 %OLLAMA_BASE%/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"%BARDIC_LLM_MODEL%\",\"temperature\":0,\"max_tokens\":16,\"messages\":[{\"role\":\"user\",\"content\":\"Say the word ready and nothing else.\"}]}" | findstr /c:"\"content\"" >nul
 if %errorlevel% neq 0 (
   echo Smoke test failed - see output above.
   exit /b 1

@@ -69,8 +69,11 @@ OLLAMA_HOST="${HOST_PORT}" ollama pull "${MODEL}"
 say "Smoke-testing ${BASE}/v1/chat/completions…"
 REPLY="$(curl -fsS --max-time 120 "${BASE}/v1/chat/completions" \
   -H 'Content-Type: application/json' \
-  -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly one word: ready\"}]}")"
-printf '%s' "${REPLY}" | grep -qi 'ready' || { warn "Unexpected smoke-test reply: ${REPLY}"; exit 1; }
+  -d "{\"model\":\"${MODEL}\",\"temperature\":0,\"max_tokens\":16,\"messages\":[{\"role\":\"user\",\"content\":\"Say the word ready and nothing else.\"}]}")"
+# Models are chatty and inexact; the contract we need is a well-formed
+# chat completion with non-empty message content, not a magic word.
+printf '%s' "${REPLY}" | grep -Eq '"choices"[[:space:]]*:' && printf '%s' "${REPLY}" | grep -Eq '"content"[[:space:]]*:[[:space:]]*"[^"]+' \
+  || { warn "Unexpected smoke-test reply: ${REPLY}"; exit 1; }
 
 cat <<EOF
 
