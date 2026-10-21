@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseWfrpTest, rollEventFromMessage, SessionLog } from "../scripts/session-log.js";
-import { buildTrackRequest, extractFeatures, museSignificance } from "../scripts/prompt-engine.js";
+import { careerFromActor, deathEventFromActor, deathEventFromTransition, deathSnapshotFromActor, isFatalCriticalWound, parseWfrpTest, rollEventFromMessage, SessionLog } from "../scripts/session-log.js";
+import { buildDirgeRequest, buildTrackRequest, extractFeatures, fallenLabel, museSignificance } from "../scripts/prompt-engine.js";
 import { aggregateBreakStats, buildBreakRequest, buildTemplateBallad } from "../scripts/recap.js";
 import { Mode } from "../scripts/constants.js";
 
@@ -48,7 +48,7 @@ test("critical wounds darken and slow the tavern track, named in why + lyrics", 
   const wounds = [{ kind: "critwound", actor: "Bram", name: "Torn Muscle", location: "rArm" }];
   const plain = buildTrackRequest({ mode: Mode.TAVERN, rolls: [] });
   const hurt = buildTrackRequest({ mode: Mode.TAVERN, rolls: [], wounds });
-  assert.equal(hurt.keyScale, "G minor");
+  assert.match(hurt.keyScale, /minor$/, "wounds force some minor key");
   assert.ok(hurt.bpm < plain.bpm, `${hurt.bpm} < ${plain.bpm}`);
   assert.match(hurt.why, /Critical Wound: Bram \(Torn Muscle\)/);
   assert.match(hurt.lyrics, /Bram/);
@@ -106,7 +106,7 @@ test("corruption makes the next track briefly discordant and sad", () => {
   const dark = buildTrackRequest({ mode: Mode.TAVERN, rolls: [], corruptions: cor });
   assert.match(dark.prompt, /discordant/i);
   assert.match(dark.why, /Corruption: Brunhilde/);
-  assert.equal(dark.keyScale, "G minor");
+  assert.match(dark.keyScale, /minor$/, "corruption forces some minor key");
   assert.ok(dark.bpm <= plain.bpm);
   assert.match(dark.lyrics, /Brunhilde/);
   assert.ok(museSignificance(extractFeatures([], [], [], cor)) >= 3);
@@ -187,4 +187,104 @@ test("Critical Wound items and Corruption increases become muse events", async (
   assert.equal(corruptionGainEvent(5, 5, "Brunhilde", 100), null);
   assert.equal(corruptionGainEvent(5, 4, "Brunhilde", 100), null);
   assert.equal(corruptionGainEvent(undefined, 4, "Brunhilde", 100), null);
+});
+
+test("plain 1d100 rolls in a WFRP world are roll-under: low is good", () => {
+  const low = rollEventFromMessage({ rolls: [{ total: 8, formula: "1d100", dice: [{ faces: 100, values: [8] }] }], systemId: "wfrp4e", speaker: { alias: "Lottie" }, timestamp: 1 }, 1);
+  const high = rollEventFromMessage({ rolls: [{ total: 91, formula: "1d100", dice: [{ faces: 100, values: [91] }] }], systemId: "wfrp4e", speaker: { alias: "Lottie" }, timestamp: 2 }, 2);
+  assert.ok(low.normalized >= 0.9, `low roll scores well (${low.normalized})`);
+  assert.ok(high.normalized <= 0.1, `high roll scores badly (${high.normalized})`);
+  const d20 = rollEventFromMessage({ rolls: [{ total: 19, formula: "1d20", dice: [{ faces: 20, values: [19] }] }], systemId: "dnd5e", speaker: { alias: "Aria" }, timestamp: 3 }, 3);
+  assert.ok(d20.normalized >= 0.9, "generic d20 stays roll-high");
+});
+
+const pc = (over = {}) => ({
+  id: "actor-1", type: "character", name: "Brunhilde",
+  currentCareer: { name: "Soldier" },
+  system: { status: { wounds: { value: 10, max: 14 }, criticalWounds: { value: 0, max: 4 } } },
+  items: [], effects: [], ...over,
+});
+
+test("career comes from currentCareer, the flagged career item, or details", () => {
+  assert.equal(careerFromActor(pc()), "Soldier");
+  assert.equal(careerFromActor(pc({
+    currentCareer: null,
+    items: [{ type: "career", name: "Rat Catcher", system: {} }, { type: "career", name: "Witch Hunter", system: { current: true } }],
+  })), "Witch Hunter");
+  assert.equal(careerFromActor(pc({ currentCareer: null, system: { details: { career: { value: "Barge Master" } } } })), "Barge Master");
+  assert.equal(careerFromActor({ type: "character", name: "Nameless", items: [] }), null);
+  assert.equal(fallenLabel({ actor: "Brunhilde", career: "Soldier" }), "Brunhilde the Soldier");
+  assert.equal(fallenLabel({ actor: "Brunhilde", career: null }), "Brunhilde");
+});
+
+test("a PC death fires once on wounds reaching 0 — never for NPCs, corpses, or first sight", () => {
+  const alive = deathSnapshotFromActor(pc());
+  const fallen = deathSnapshotFromActor(pc({ system: { status: { wounds: { value: 0, max: 14 } } } }));
+  const ev = deathEventFromTransition(alive, fallen, 1000);
+  assert.deepEqual(ev, { kind: "death", ts: 1000, actor: "Brunhilde", career: "Soldier", actorId: "actor-1", cause: null });
+  assert.equal(deathEventFromTransition(alive, alive, 1000), null, "still alive");
+  assert.equal(deathEventFromTransition(fallen, fallen, 1000), null, "was already dead");
+  assert.equal(deathEventFromTransition(null, fallen, 1000), null, "first observation is only a baseline");
+  const npcAlive = deathSnapshotFromActor(pc({ type: "npc", hasPlayerOwner: false }));
+  const npcDead = deathSnapshotFromActor(pc({ type: "npc", hasPlayerOwner: false, system: { status: { wounds: { value: 0 } } } }));
+  assert.equal(deathEventFromTransition(npcAlive, npcDead, 1000), null, "enemy deaths earn no dirge");
+});
+
+test("dead status and critical wounds past the maximum also count as death", () => {
+  const alive = deathSnapshotFromActor(pc());
+  const flagged = deathSnapshotFromActor(pc({ statuses: new Set(["dead"]) }));
+  assert.equal(deathEventFromTransition(alive, flagged, 5)?.actor, "Brunhilde");
+  const tooManyCrits = deathSnapshotFromActor(pc({ system: { status: { wounds: { value: 3, max: 14 }, criticalWounds: { value: 5, max: 4 } } } }));
+  assert.equal(deathEventFromTransition(alive, tooManyCrits, 5)?.career, "Soldier");
+  // Explicit proven-death path (combatant marked Defeated / GM macro).
+  assert.equal(deathEventFromActor(pc(), 7)?.career, "Soldier");
+  assert.equal(deathEventFromActor({ actor: "Bram", career: "Rat Catcher" }, 7)?.actor, "Bram");
+  assert.equal(deathEventFromActor(pc({ type: "npc", hasPlayerOwner: false }), 7), null);
+});
+
+test("fatal critical wounds say the victim died; ordinary ones do not", () => {
+  assert.equal(isFatalCriticalWound({ type: "critical", name: "Decapitated", system: {} }), true);
+  assert.equal(isFatalCriticalWound({ type: "critical", name: "Crushed", system: { description: { value: "<p>The victim dies instantly</p>" } } }), true);
+  assert.equal(isFatalCriticalWound({ type: "critical", name: "Torn Muscle", system: { description: { value: "A painful tear" } } }), false);
+  assert.equal(isFatalCriticalWound({ type: "weapon", name: "Deadly Blade", system: {} }), false);
+});
+
+test("the dirge names the fallen player and their career, slow and solemn", () => {
+  const dirge = buildDirgeRequest({ death: { actor: "Brunhilde", career: "Soldier" } });
+  assert.equal(dirge.title, "Dirge for Brunhilde");
+  assert.match(dirge.lyrics, /Brunhilde the Soldier/);
+  assert.match(dirge.why, /Brunhilde the Soldier has died/);
+  assert.match(dirge.prompt, /dirge/i);
+  assert.match(dirge.prompt, /no crowd noise/i);
+  assert.doesNotMatch(dirge.prompt, /bawdy|raunchy|seamless loop/i, "a dirge is reverent and ends");
+  assert.ok(dirge.bpm <= 70, `dirge is slow (${dirge.bpm} BPM)`);
+  assert.match(dirge.keyScale, /minor$/, "dirges pick a solemn minor key");
+  assert.ok(dirge.bpm < buildTrackRequest({ mode: Mode.TAVERN }).bpm, "slower than any tavern song");
+  assert.match(buildDirgeRequest({ death: { actor: "Brunhilde", career: "Soldier" }, songIndex: 1 }).prompt, /female Bretonnian bard/, "dirges take their bard turn");
+  const careerless = buildDirgeRequest({ death: { actor: "Nameless" } });
+  assert.match(careerless.lyrics, /Nameless/);
+  assert.doesNotMatch(careerless.lyrics, /undefined|null/);
+});
+
+test("deaths darken the next song, feed the muse, and are sung in the recap", () => {
+  const deaths = [{ kind: "death", actor: "Brunhilde", career: "Soldier" }];
+  const plain = buildTrackRequest({ mode: Mode.TAVERN, rolls: [] });
+  const grieving = buildTrackRequest({ mode: Mode.TAVERN, rolls: [], deaths });
+  assert.ok(grieving.bpm < plain.bpm, "grief slows the next song");
+  assert.match(grieving.keyScale, /minor$/, "grief forces some minor key");
+  assert.match(grieving.lyrics, /Brunhilde the Soldier/);
+  assert.match(grieving.why, /Death: Brunhilde the Soldier has died/);
+  assert.ok(museSignificance(extractFeatures([], [], [], [], deaths)) >= 10);
+
+  const now = 10_000_000_000;
+  const log = new SessionLog();
+  log.add({ kind: "death", ts: now - 1000, actor: "Brunhilde", career: "Soldier" }, now);
+  assert.equal(log.museDeaths(now).length, 1);
+  assert.equal(log.summary(now).deaths, 1);
+
+  const stats = aggregateBreakStats([{ kind: "death", ts: 1, actor: "Brunhilde", career: "Soldier" }]);
+  assert.equal(stats.deaths.length, 1);
+  assert.match(stats.highlights.join(" "), /Brunhilde the Soldier died/);
+  assert.match(buildTemplateBallad(stats).lyrics, /Brunhilde the Soldier died/);
+  assert.match(buildBreakRequest({ stats, lyrics: "x" }).keyScale, /minor$/, "a death in the recap forces minor");
 });

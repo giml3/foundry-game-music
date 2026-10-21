@@ -15,6 +15,7 @@
     "Resumed": "Bardic Dice resumed",
     "Stopped": "Bardic Dice stopped",
     "BreakStarted": "On break — composing your recap ballad…",
+    "DirgeStarted": "The music falls silent — composing a dirge for the fallen…",
     "OnlyGM": "Only the GM can control Bardic Dice generation.",
     "Settings": {
       "AceBaseUrl": "ACE-Step API URL",
@@ -46,14 +47,32 @@
       "SummarizerBaseUrlHint": "e.g. http://127.0.0.1:11434/v1 for Ollama, or https://api.openai.com/v1",
       "SummarizerApiKey": "Summarizer API Key",
       "SummarizerModel": "Summarizer Model",
+      "SmallLlmEnabled": "Small LLM Lyric & Joke Writer + Story Tracker",
+      "SmallLlmEnabledHint": "A super-small local LLM rewrites verses and bridge jokes fresh each song from the latest dice facts and the all-time story tracker (grimdark comedy, original parodies only — no copied lyrics). Only actor names/careers, roll results and stats are sent to the endpoint below, never raw chat. Falls back to built-in words when unreachable.",
+      "SmallLlmBaseUrl": "Small LLM API URL (OpenAI-compatible)",
+      "SmallLlmBaseUrlHint": "Default is local Ollama. Run sidecar/setup-llm.sh once to install it and pull the tiny model.",
+      "SmallLlmApiKey": "Small LLM API Key",
+      "SmallLlmModel": "Small LLM Model",
+      "SmallLlmModelHint": "Keep it tiny and fast, e.g. llama3.2:1b or qwen2.5:1.5b.",
       "UploadFolder": "Generated Music Folder",
       "UploadFolderHint": "Folder (under the Foundry data source) where generated MP3s are uploaded so players can hear them.",
       "Volume": "Bardic Dice Volume",
       "JournalRecap": "Save Break Recaps to a Journal",
       "CorruptionSting": "Sad Sting on Corruption (WFRP4e)",
       "CorruptionStingHint": "Play a short discordant sting for everyone when an actor gains a Corruption point, and sour the next track briefly.",
+      "DeathDirge": "Dirge on Player-Character Death",
+      "DeathDirgeHint": "When a player character dies — Wounds/HP reach 0, a Dead condition lands, Critical Wounds pass their maximum, a fatal Critical Wound is applied, or the combatant is marked Defeated — stop the set and sing a slow dirge naming the fallen character and their career, then resume. NPC deaths never trigger it.",
+      "DirgeDuration": "Dirge Length (seconds)",
       "BridgeDuration": "Instrumental Bridge Length (seconds)",
-      "BridgeDurationHint": "Long instrumental bridges loop between vocal songs (and across tavern/combat style changes) to pad time while the next song composes."
+      "BridgeDurationHint": "Long instrumental bridges loop between vocal songs (and across tavern/combat style changes) to pad time while the next song composes.",
+      "BridgeLibrary": "Prefer Pregenerated Bridge Library",
+      "BridgeLibraryHint": "Play pregenerated lively plucky-lute interludes from the <upload folder>/library (see sidecar/pregenerate-bridges.mjs) instead of generating bridges live. Falls back to live generation when the library is empty.",
+      "PlayerRequests": "Player Song Requests (!bard)",
+      "PlayerRequestsHint": "Players can type requests in chat — \"!bard sing about dragons, faster, for Aria!\" — and the bards answer in chat and steer the next song (tempo, mood, topic, dedication, instrumental).",
+      "ParodyEnabled": "LRCLIB Parody Writer",
+      "ParodyEnabledHint": "The parody sidecar (sidecar/parody-writer.mjs) picks a random song from your local LRCLIB dump, reduces it to a stanza/syllable/rhyme skeleton (source words never leave the GM machine), and the tiny LLM writes an original grimdark parody on that skeleton with your dice facts. Drafts sharing a line or 5-word run with the source are refused. Falls back to the normal writers when unreachable.",
+      "ParodyBaseUrl": "Parody Writer URL",
+      "ParodyBaseUrlHint": "Default is the local parody sidecar. Run sidecar/start-parody.sh (needs lrclib.sqlite3 — see sidecar/README.md)."
     }
   }
 }

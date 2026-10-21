@@ -150,9 +150,10 @@ export class AceStepClient {
    * Poll until success/failure/timeout. Generation takes seconds (turbo) to
    * >a minute (base/CPU), so the default budget is generous.
    */
-  async waitForTask(taskId, { timeoutMs = 10 * 60 * 1000, pollMs = 2000, onPoll = null } = {}) {
+  async waitForTask(taskId, { timeoutMs = 10 * 60 * 1000, pollMs = 2000, onPoll = null, signal = null } = {}) {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
+      if (signal?.aborted) throw new AceStepError("ACE-Step generation aborted (superseded)");
       const q = await this.queryResult(taskId);
       if (onPoll) { try { onPoll(q); } catch { /* observer must not break polling */ } }
       if (q.status === 1) return q;

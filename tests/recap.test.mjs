@@ -60,3 +60,19 @@ test("summarizer client parses OpenAI-compatible responses and throws on HTTP er
    fetchSummarizerLyrics({ baseUrl: "http://x/v1", model: "m", stats: aggregateBreakStats([]), fetchImpl: async () => ({ ok: false, status: 500 }) }),
    /Summarizer HTTP 500/);
 });
+
+test("WFRP recap celebrates the LOW best roll, never the highest failure", () => {
+  const wfrpEvents = [
+    { kind: "roll", ts: T0, actor: "Lottie", total: 91, target: 27, normalized: 0, isCrit: false, isFumble: false, system: "wfrp4e", flavor: "Cool Test" },
+    { kind: "roll", ts: T0 + 1, actor: "Lottie", total: 4, target: 46, normalized: 0.92, isCrit: false, isFumble: false, system: "wfrp4e", flavor: "Entertain Test" },
+    { kind: "roll", ts: T0 + 2, actor: "Pieter", total: 17, target: 48, normalized: 0.81, isCrit: false, isFumble: false, system: "wfrp4e", flavor: "Play Test" },
+  ];
+  const s = aggregateBreakStats(wfrpEvents);
+  assert.equal(s.biggestHit, null, "no damage rolls means no biggest hit");
+  assert.equal(s.bestRoll.total, 4, "best WFRP roll is the low one");
+  assert.equal(s.bestRoll.actor, "Lottie");
+  assert.ok(s.highlights.some((h) => /best roll: Lottie — 4 vs 46/.test(h)), s.highlights.join("; "));
+  assert.ok(!s.highlights.some((h) => /91/.test(h)), "the 91 failure is never celebrated");
+  const b = buildTemplateBallad(s);
+  assert.match(b.lyrics, /finest roll was Lottie's 4/);
+});

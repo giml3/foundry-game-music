@@ -1,12 +1,13 @@
 {
   "name": "foundry-game-music",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "private": true,
   "type": "module",
   "description": "Dev/test harness only \u2014 Foundry loads module.json, not this file.",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check scripts/main.js && node --check scripts/ace-client.js && node --check scripts/session-log.js && node --check scripts/prompt-engine.js && node --check scripts/recap.js && node --check scripts/player-engine.js && node --check scripts/settings.js && node --check scripts/controls.js && node --check scripts/status-app.js && node --check scripts/constants.js",
-    "mock-ace": "node tests/mock-ace-server.mjs"
+    "check": "node --check scripts/main.js && node --check scripts/ace-client.js && node --check scripts/session-log.js && node --check scripts/prompt-engine.js && node --check scripts/recap.js && node --check scripts/player-engine.js && node --check scripts/settings.js && node --check scripts/controls.js && node --check scripts/status-app.js && node --check scripts/constants.js && node --check scripts/llm-writer.js && node --check scripts/parody.js && node --check scripts/hud.js && node --check scripts/sidebar.js && node --check sidecar/parody-writer.mjs",
+    "mock-ace": "node tests/mock-ace-server.mjs",
+    "smoke:hud": "node tests/hud-browser-smoke.mjs"
   }
 }

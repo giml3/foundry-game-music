@@ -21,6 +21,7 @@ export const Mode = Object.freeze({
   TAVERN: "tavern",
   COMBAT: "combat",
   BREAK: "break",
+  DIRGE: "dirge",
 });
 
 export const Bawdy = Object.freeze({ CLEAN: "clean", BAWDY: "bawdy", FILTHY: "filthy" });
@@ -38,3 +39,17 @@ export const CROSSFADE_MS = 4000;
 export const BRIDGE_MIN_SEC = 25;
 /** While a bridge (or loop-hold) plays, re-check for the next vocal this often. */
 export const BRIDGE_CHECK_SEC = 15;
+/** After combat starts/ends, the current track yields within this long. */
+export const MODE_SWITCH_SEC = 12;
+/** A fresh crit/fumble earns a fresh track within this long. */
+export const MUSE_SWITCH_SEC = 40;
+/** Minimum gap between crit/fumble-expedited track changes. */
+export const EXPEDITE_COOLDOWN_MS = 90_000;
+/** Only this many tracks are composed ahead (GPU relief: fewer orphans). */
+export const QUEUE_AHEAD = 1;
+/** Combat renders are capped here so a switch lands fast (tracks loop). */
+export const COMBAT_DURATION_CAP_SEC = 120;
+/** Combat bridge renders are capped here for the same reason. */
+export const COMBAT_BRIDGE_CAP_SEC = 60;
+/** LLM polish is skipped while an urgent switch is younger than this. */
+export const URGENT_POLISH_WINDOW_MS = 30_000;

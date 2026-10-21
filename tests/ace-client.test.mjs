@@ -69,3 +69,14 @@ test("api key is sent as a bearer token", async (t) => {
   assert.equal(await new AceStepClient({ baseUrl: base }).healthCheck(), false);
   assert.equal(await new AceStepClient({ baseUrl: base, apiKey: "sekret" }).healthCheck(), true);
 });
+
+test("waitForTask stops polling when the caller aborts (superseded switch)", async () => {
+  const client = new AceStepClient({
+    fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ data: [{ task_id: "t9", status: 0, result: "" }], code: 200 }) }),
+    sleep: async () => {},
+  });
+  const ctrl = new AbortController();
+  const waiting = client.waitForTask("t9", { pollMs: 1, signal: ctrl.signal, timeoutMs: 60000 });
+  ctrl.abort();
+  await assert.rejects(waiting, /aborted/);
+});

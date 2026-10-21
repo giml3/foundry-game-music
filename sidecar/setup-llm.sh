@@ -4,11 +4,11 @@
 # 127.0.0.1:11434, pulls the recap-writer model, and smoke-tests the
 # OpenAI-compatible endpoint the Foundry module talks to.
 # Idempotent: safe to run again at any time.
-#   ./setup-llm.sh                 # model llama3.1
+#   ./setup-llm.sh                 # tiny lyric/joke model llama3.2:1b
 #   BARDIC_LLM_MODEL=qwen2.5:7b ./setup-llm.sh
 set -euo pipefail
 
-MODEL="${BARDIC_LLM_MODEL:-llama3.1}"
+MODEL="${BARDIC_LLM_MODEL:-llama3.2:1b}"
 HOST_PORT="${OLLAMA_HOST:-127.0.0.1:11434}"
 BASE="http://${HOST_PORT}"
 LOG_FILE="${TMPDIR:-/tmp}/bardic-ollama.log"
@@ -62,7 +62,7 @@ else
 fi
 
 # 3. Pull the recap-writer model (no-op if already downloaded) ---------------
-say "Pulling model '${MODEL}' (first run downloads a few GB)…"
+say "Pulling tiny model '${MODEL}' (first run downloads ~1 GB)…"
 OLLAMA_HOST="${HOST_PORT}" ollama pull "${MODEL}"
 
 # 4. Smoke-test the OpenAI-compatible endpoint Foundry will use --------------
@@ -82,6 +82,9 @@ Local LLM is running. In Foundry (Module Settings → Bardic Dice) set:
   Summarizer API URL               : ${BASE}/v1
   Summarizer Model                 : ${MODEL}
   Summarizer API Key               : (leave blank)
+  Small LLM Lyric/Joke Writer      : on (default)
+  Small LLM API URL                : ${BASE}/v1
+  Small LLM Model                  : ${MODEL}
 
 Keep it running each session with ./start-llm.sh, or start both sidecars
 (ACE-Step + LLM) with ./start-all.sh. Stop a background server started by

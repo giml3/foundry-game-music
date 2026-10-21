@@ -37,8 +37,9 @@ export class BardicStatusApp extends foundry.applications.api.HandlebarsApplicat
       nextTrack: s.nextTrack,
       healthOk: s.healthOk === true,
       why: s.why ?? "",
+      activity: (s.activity ?? []).slice(-3).map((a) => `${({ bard: "BARD", "lyric-llm": "LYRIC", parody: "PARODY", memory: "MEMORY" })[a.actor] ?? "BARD"}: ${a.text}`),
       isGM: game.user?.isGM === true,
-      logSummary: `${sum.rolls} rolls · ${sum.chats} chats · ${sum.combats} combats${sum.wounds ? ` · ${sum.wounds} critical wounds` : ""}`,
+      logSummary: `${sum.rolls} rolls · ${sum.chats} chats · ${sum.combats} combats${sum.wounds ? ` · ${sum.wounds} critical wounds` : ""}${sum.deaths ? ` · ${sum.deaths} deaths` : ""}${this.deps.story ? ` · all-time ${this.deps.story.totals.rolls} rolls/${this.deps.story.totals.deaths} deaths` : ""}`,
     };
   }
 

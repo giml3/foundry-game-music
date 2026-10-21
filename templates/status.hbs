@@ -9,6 +9,7 @@
   </div>
   <div class="bd-row"><span class="bd-label">Session log</span><span>{{logSummary}}</span></div>
   {{#if why}}<p class="bd-why">♪ {{why}}</p>{{/if}}
+  {{#each activity}}<div class="bd-row"><span class="bd-label">Activity</span><span>{{this}}</span></div>{{/each}}
   {{#if isGM}}
   <div class="bd-buttons">
     <button type="button" data-action="bd-start"><i class="fa-solid fa-play"></i> Start</button>

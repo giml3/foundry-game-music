@@ -6,8 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sh = ["setup-llm.sh", "start-llm.sh", "start-all.sh", "start-api.sh", "start-api-macos.sh"];
-const bat = ["setup-llm.bat", "start-llm.bat", "start-api.bat"];
+const sh = ["setup-llm.sh", "start-llm.sh", "start-all.sh", "start-api.sh", "start-api-macos.sh", "start-parody.sh"];
+const bat = ["setup-llm.bat", "start-llm.bat", "start-api.bat", "start-parody.bat"];
 
 test("LLM + ACE-Step sidecar scripts exist for every platform", () => {
   for (const f of [...sh, ...bat]) assert.ok(existsSync(join(root, "sidecar", f)), f);

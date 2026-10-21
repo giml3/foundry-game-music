@@ -12,3 +12,41 @@
 .bardic-dice-card h4 { margin: 0.2rem 0; }
 .bardic-dice-card .bd-lyrics { white-space: pre-wrap; font-style: italic; }
 .bardic-dice-card .bd-stats { margin: 0.3rem 0 0 1rem; }
+
+/* Bottom-left corner feedback: bard / lyric-LLM / memory activity.
+   Sits ABOVE the players list (#players owns the very bottom-left corner
+   in Foundry v14) and above the interface layer, so it can never be
+   painted underneath Foundry's own UI. */
+#bardic-dice-hud {
+  position: fixed; left: 10px; bottom: 72px; z-index: 90;
+  max-width: 320px; padding: 6px 9px;
+  background: rgba(18, 14, 10, 0.82); color: #e8dcc3;
+  border: 1px solid rgba(184, 134, 11, 0.55); border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+  font-size: 12px; line-height: 1.45; pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#bardic-dice-hud .bd-hud-now { font-weight: 700; color: #f4e6bd; }
+#bardic-dice-hud .bd-hud-line { opacity: 0.85; white-space: normal; }
+@media (prefers-reduced-motion: no-preference) {
+  #bardic-dice-hud { transition: opacity 0.3s ease; }
+}
+
+/* Right-sidebar "Lyric Bot at Work" panel. */
+#bardic-dice-sidebar {
+  margin: 6px; padding: 6px 9px; max-height: 46vh; overflow-y: auto;
+  background: rgba(24, 19, 13, 0.92); color: #e8dcc3;
+  border: 1px solid rgba(184, 134, 11, 0.55); border-radius: 4px;
+  font-size: 12px; line-height: 1.45;
+}
+#bardic-dice-sidebar summary { cursor: pointer; font-weight: 700; color: #f4e6bd; }
+#bardic-dice-sidebar .bd-sb-now { font-weight: 700; color: #f4e6bd; margin-top: 4px; }
+#bardic-dice-sidebar .bd-sb-why { font-style: italic; opacity: 0.9; }
+#bardic-dice-sidebar .bd-sb-work { margin-top: 6px; font-weight: 600; }
+#bardic-dice-sidebar .bd-sb-detail { opacity: 0.78; padding-left: 8px; overflow-wrap: anywhere; }
+#bardic-dice-sidebar .bd-sb-line { opacity: 0.85; }
+/* Fallback dock when neither #sidebar nor #ui-right exists at mount time:
+   float the panel at the top-right so the work log is still on screen. */
+#bardic-dice-sidebar.bd-sidebar-floating {
+  position: fixed; right: 8px; top: 48px; width: 300px; z-index: 90; margin: 0;
+}
