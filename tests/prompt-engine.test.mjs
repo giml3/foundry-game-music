@@ -68,8 +68,8 @@ test("tracks default to long loop-friendly durations with seamless-loop tags", (
 
 test("each loop keeps the chorus but varies the verses", () => {
   const rolls = [roll({ isCrit: true, normalized: 1, total: 20 }), roll({ actor: "Bram", isFumble: true, normalized: 0, total: 1 })];
-  const loop0 = buildTrackRequest({ rolls, loopIndex: 0 });
-  const loop1 = buildTrackRequest({ rolls, loopIndex: 1, recentVerses: loop0.verseLines });
+  const loop0 = buildTrackRequest({ rolls, loopIndex: 0, songIndex: 0 });
+  const loop1 = buildTrackRequest({ rolls, loopIndex: 1, songIndex: 0, recentVerses: loop0.verseLines });
   const chorus = (lyrics) => lyrics.split("[Chorus]")[1]?.split("\n").filter(Boolean)[0];
   assert.equal(chorus(loop0.lyrics), chorus(loop1.lyrics), "chorus hook is stable across loops");
   assert.ok(loop0.verseLines.length >= 2 && loop1.verseLines.length >= 2, "two verses worth of lines");
@@ -265,4 +265,15 @@ test("fresh roll jokes use the actual fumble and never repeat a recent joke", ()
   assert.ok(bridge.joke && bridge.joke !== j1 && bridge.joke !== j2);
   assert.match(bridge.prompt, /chord progression/);
   assert.match(bridge.why, /style:/);
+});
+
+test("bawdy chorus and verse lines rotate by seed instead of repeating one fixed line", async () => {
+  const { bawdyFragment } = await import("../scripts/prompt-engine.js");
+  const seen = new Set([0, 1, 2].map((s) => bawdyFragment("bawdy", s).chorus));
+  assert.equal(seen.size, 3, "three seeds give three different chorus openers");
+  assert.equal(bawdyFragment("bawdy", 3).chorus, bawdyFragment("bawdy", 0).chorus, "rotation wraps");
+  assert.equal(bawdyFragment("bawdy").chorus, bawdyFragment("bawdy", 0).chorus, "default seed keeps the original first line");
+  const verses = new Set([0, 1, 2].map((s) => bawdyFragment("bawdy", s).verse));
+  assert.equal(verses.size, 3, "verse lines rotate too");
+  assert.match(bawdyFragment("clean", 1).chorus, /Sing/, "other levels rotate within their own pool");
 });

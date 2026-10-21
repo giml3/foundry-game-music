@@ -96,17 +96,45 @@ export function fitLyricsToLoop(llmText, fallback = "", { loopHook = "" } = {}) 
     else if (!cur && line.trim()) { cur = { tag: "", name: "", lines: [line.trim()] }; blocks.push(cur); }
   }
   if (!blocks.length) return fallback;
+  // The draft's own chorus lines may replace the template's non-hook chorus
+  // lines, so choruses don't repeat the same fixed opener every song. The
+  // hook line itself always stays verbatim — it is the loop's identity.
+  const draftChorus = [];
+  {
+    let inChorus = false;
+    for (const raw of String(llmText ?? "").split("\n")) {
+      const tag = raw.match(/^\[([^\]]+)\]/);
+      if (tag) { inChorus = /^chorus/i.test(tag[1].split(" - ")[0].trim()); continue; }
+      const line = raw.trim();
+      if (inChorus && line && !draftChorus.includes(line)) draftChorus.push(line);
+    }
+  }
+  const usedDraftChorus = new Set();
   let cursor = 0;
   const out = [];
   for (const b of blocks) {
     if (b.tag) out.push(b.tag);
     const isChorus = /^chorus/i.test(b.name);
     const isSilent = /^(intro|instrumental|drop)$/i.test(b.name);
-    if (isChorus) { out.push(...(b.lines.length ? b.lines : [loopHook].filter(Boolean))); continue; }
+    if (isChorus) {
+      const lines = b.lines.length ? b.lines : [loopHook].filter(Boolean);
+      out.push(...lines.map((l) => {
+        if (!loopHook || l === loopHook) return l;
+        const fresh = draftChorus.find((d) => d !== loopHook && !usedDraftChorus.has(d));
+        if (!fresh) return l;
+        usedDraftChorus.add(fresh);
+        return fresh;
+      }));
+      continue;
+    }
     if (isSilent) continue;
     const want = Math.max(1, b.lines.length);
     const filled = [];
-    while (filled.length < want && cursor < draft.length) filled.push(draft[cursor++]);
+    while (filled.length < want && cursor < draft.length) {
+      const l = draft[cursor++];
+      if (draftChorus.includes(l)) continue; // reserved for the chorus blocks
+      filled.push(l);
+    }
     out.push(...(filled.length ? filled : b.lines));
   }
   const lyrics = out.join("\n").trim();

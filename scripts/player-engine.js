@@ -235,6 +235,7 @@ export class BardicPlayer {
         `Party: ${party.map((p) => `${p.name}${p.career ? ` the ${p.career}` : ""}`).join("; ") || "—"} · Enemy: ${isDirge ? "— (dirges mock no one)" : enemies.map((p) => p.name).join("; ") || "—"} · ${isBreak ? "Session highlights" : "Dice facts"}: ${facts.join(" | ") || "quiet table"} · Saga lines fed: ${this.story.contextLines().length}`);
       const par = await fetchParodySong({
         baseUrl: c.parodyBaseUrl,
+        timeoutMs: isDirge ? 25000 : 45000, // dirges interrupt the set — never keep the table waiting on a hunt
         payload: {
           facts, storyLines: this.story.contextLines(), bardLabel: req.bard?.label ?? "", bawdy: c.bawdy,
           styleId: req.variety?.styleId ?? "", keyScale: req.keyScale ?? "",

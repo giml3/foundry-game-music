@@ -89,7 +89,7 @@ export function aggregateBreakStats(events = []) {
 
 /** Offline template ballad — always available, names real table events. Break-only crowd singing is fine here. */
 export function buildTemplateBallad(stats, { bawdy = Bawdy.BAWDY } = {}) {
-  const b = bawdyFragment(bawdy);
+  const b = bawdyFragment(bawdy, stats.totalRolls ?? 0);
   const title = "The Ballad of the Break";
   const v = [];
   let verse = 0;
@@ -178,7 +178,7 @@ export async function fetchSummarizerLyrics({ baseUrl, apiKey = "", model, stats
 
 /** ACE-Step request for the break ballad. */
 export function buildBreakRequest({ stats, lyrics, bawdy = Bawdy.BAWDY, breakDuration = 240, songIndex = 0, varietySeed = songIndex } = {}) {
-  const b = bawdyFragment(bawdy);
+  const b = bawdyFragment(bawdy, songIndex);
   const ratio = stats.totalRolls ? (stats.crits - stats.fumbles) / stats.totalRolls : 0;
   const voice = bardVoiceForSong(songIndex, { duet: true }); // break ballads are duets
   const variety = pickMusicalVariety({ mode: "tavern", songIndex, seed: varietySeed, forceMinor: Boolean(stats.deaths?.length) });

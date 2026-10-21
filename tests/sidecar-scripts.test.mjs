@@ -44,6 +44,14 @@ test("start-all launches the parody core writer when the LRCLIB db is present", 
   assert.match(all, /8123/);
 });
 
+test("start-all logs every service into sidecar/logs", () => {
+  const all = readFileSync(join(root, "sidecar", "start-all.sh"), "utf8");
+  assert.match(all, /bardic-ace\.log/);
+  assert.match(all, /bardic-parody\.log/);
+  assert.match(all, /bardic-ollama\.log/);
+  assert.match(all, /tee -a/, "ACE output must be tee'd to its log file");
+});
+
 test("start scripts keep Ollama bound to localhost", () => {
   assert.match(readFileSync(join(root, "sidecar", "start-llm.sh"), "utf8"), /127\.0\.0\.1:11434/);
   assert.match(readFileSync(join(root, "sidecar", "start-llm.bat"), "utf8"), /127\.0\.0\.1:11434/);

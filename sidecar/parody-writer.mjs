@@ -178,19 +178,34 @@ function main() {
         return;
       }
       if (req.method === "POST" && req.url === "/parody") {
+        const t0 = Date.now();
         let raw = "";
         for await (const chunk of req) { raw += chunk; if (raw.length > 65536) throw new Error("Request too large"); }
-        const out = await handleParody(db, raw ? JSON.parse(raw) : {}, { callLlm });
-        console.log(`parody: track #${out.source.trackId} (${out.skeleton.stanzas} stanzas) screened and served`);
+        const body = raw ? JSON.parse(raw) : {};
+        console.log(`parody: request mode=${body.mode ?? "tavern"} facts=${Array.isArray(body.facts) ? body.facts.length : 0} party=${Array.isArray(body.party) ? body.party.length : 0}`);
+        const out = await handleParody(db, body, { callLlm });
+        console.log(`parody: track #${out.source.trackId} (${out.skeleton.stanzas} stanzas) screened and served in ${Date.now() - t0}ms — ${out.fit ?? ""}`);
         send(200, out);
         return;
       }
       send(404, { error: "not found" });
     } catch (e) {
+      console.error(`parody: request failed — ${String(e?.message ?? e)}`);
       send(502, { error: String(e?.message ?? e) });
     }
   });
-  server.listen(port, "127.0.0.1", () => console.log(`Bardic Dice parody writer on http://127.0.0.1:${port} (db: ${dbPath}, model: ${ollama.model})`));
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`Bardic Dice parody writer on http://127.0.0.1:${port} (db: ${dbPath}, model: ${ollama.model})`);
+    // Warm the database page cache and the LLM up front, so the first real
+    // hunt of the session is not the cold one.
+    void (async () => {
+      const t0 = Date.now();
+      try { collectCandidates(db, Math.random, 4); console.log(`parody: db warmup done in ${Date.now() - t0}ms`); }
+      catch (e) { console.error(`parody: db warmup failed — ${String(e?.message ?? e)}`); }
+      try { await fetchSmallLlmText({ ...ollama, prompt: "Reply with the single word: ready", maxTokens: 4, timeoutMs: 30000 }); console.log("parody: llm warmup done"); }
+      catch (e) { console.error(`parody: llm warmup failed — ${String(e?.message ?? e)}`); }
+    })();
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

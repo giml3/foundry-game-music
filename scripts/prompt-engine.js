@@ -70,20 +70,44 @@ export function museSignificance(f) {
 // `crowd` restores the full tavern throng, and is used only for break ballads.
 const BAWDY_LINES = {
   clean: {
-    chorus: "Sing low, sing grim, for the road is long, and Morr keeps time to a travelling song!",
-    verse: "The rain on the Reik and the mud on the road, every traveller carries a heavier load.",
+    choruses: [
+      "Sing low, sing grim, for the road is long, and Morr keeps time to a travelling song!",
+      "Sing soft, sing low, for the night is deep, and Morr counts all who are fast asleep!",
+      "Sing plain, sing true, for the dawn will tell, who kept the faith and who rang the bell!",
+    ],
+    verses: [
+      "The rain on the Reik and the mud on the road, every traveller carries a heavier load.",
+      "The frost on the furrow, the smoke on the hill, the road takes all comers and winter takes its fill.",
+      "A crust for the stranger, a song for the lame, the Emperor's peace is a flickering flame.",
+    ],
     prompt: "wholesome family-friendly tavern folk song, solo bard with a single cheerful voice, no crowd noise, no background chatter",
     crowd: "cheerful singalong chorus with a merry tavern crowd joining in",
   },
   bawdy: {
-    chorus: "Pinch a cheek and dodge the priest, we'll laugh at doom till the dooming's ceased!",
-    verse: "Oh the landlord's widow keeps a wink and a knife, she'll charm your purse and she'll charm your life.",
+    choruses: [
+      "Pinch a cheek and dodge the priest, we'll laugh at doom till the dooming's ceased!",
+      "Raise a boot to the gallows tree, the doomed dance best when the doomed dance free!",
+      "Kiss the cook and curse the tithe, we'll sing till Morr comes scything by!",
+    ],
+    verses: [
+      "Oh the landlord's widow keeps a wink and a knife, she'll charm your purse and she'll charm your life.",
+      "Oh the hangman's daughter deals the cards, she'll deal you rope or she'll deal you hearts.",
+      "Oh the miller's son has a silver tongue, he'll talk the shirt off the newly hung.",
+    ],
     prompt: "bawdy medieval drinking song sung by a solo bard, single lusty vocalist, cheeky double-entendre lyrics, no crowd noise, no group chorus, no background chatter",
     crowd: "rowdy tavern chorus, townsfolk singing along, boots stamping",
   },
   filthy: {
-    chorus: "Slap a thigh and damn the dawn, we'll sin till the watch comes hammering on!",
-    verse: "Oh the sailor swore he'd be chaste by ten, but the widow's smile made a liar of men.",
+    choruses: [
+      "Slap a thigh and damn the dawn, we'll sin till the watch comes hammering on!",
+      "Grab a wrist and damn the tithe, we'll rut and revel while the doomsmen writhe!",
+      "Lift a skirt for the end of days, the world's on fire in a hundred ways!",
+    ],
+    verses: [
+      "Oh the sailor swore he'd be chaste by ten, but the widow's smile made a liar of men.",
+      "Oh the ostler's wife keeps a bed half-made, for coin, for love, or a serenade.",
+      "Oh the priest of Sigmar lost his pants, at the harvest dance, at the harvest dance.",
+    ],
     prompt: "raunchy bawdy tavern drinking song sung by a solo bard, single drunken vocalist, adult innuendo, no crowd noise, no group chorus, no background chatter",
     crowd: "drunken tavern crowd roaring the chorus, townsfolk hollering along, benches overturning",
   },
@@ -114,8 +138,11 @@ export function tagLyricsForBard(lyrics, voice) {
   return `[${voice.tag}]
 ${String(lyrics).replace("[Verse 1]", `[Verse 1 - ${who}]`).replace("[Verse 2]", `[Verse 2 - ${who}]`).replace("[Verse 3]", `[Verse 3 - ${who}]`)}`;
 }
-export function bawdyFragment(level) {
-  return BAWDY_LINES[level] ?? BAWDY_LINES[Bawdy.BAWDY];
+/** Chorus/verse lines rotate by seed (per song/lap) so no single line wears out its welcome. */
+export function bawdyFragment(level, seed = 0) {
+  const e = BAWDY_LINES[level] ?? BAWDY_LINES[Bawdy.BAWDY];
+  const pick = (arr) => arr[Math.abs(Math.trunc(seed) || 0) % arr.length];
+  return { chorus: pick(e.choruses), verse: pick(e.verses), prompt: e.prompt, crowd: e.crowd };
 }
 
 /** Prompt tags that make ACE-Step render tracks which loop back cleanly. */
@@ -406,7 +433,7 @@ function loopLyrics({ pool, eventLines, chorusLines, loopIndex = 0, recentVerses
 }
 
 function tavernLyrics(f, bawdy, loop = {}, requests = null, careers = null, story = null) {
-  const b = bawdyFragment(bawdy);
+  const b = bawdyFragment(bawdy, loop.songIndex ?? 0); // per SONG, not per lap — a song's chorus is stable across its laps, but rotates between songs
   const v = loop.loopIndex ?? 0;
   const eventLines = [];
   if (f.deaths?.length) eventLines.push(`We raise a cup for ${fallenLabel(f.deaths[f.deaths.length - 1])}, lost and gone before, Morr keep their soul forevermore.`);
@@ -443,7 +470,7 @@ function tavernLyrics(f, bawdy, loop = {}, requests = null, careers = null, stor
 }
 
 function combatLyrics(f, bawdy, loop = {}, requests = null, careers = null, story = null) {
-  const b = bawdyFragment(bawdy);
+  const b = bawdyFragment(bawdy, loop.songIndex ?? 0); // per SONG, not per lap — a song's chorus is stable across its laps, but rotates between songs
   const v = loop.loopIndex ?? 0;
   const eventLines = ["Steel is ringing and the drums beat fast, hold the line now, make every blow last!"];
   if (f.deaths?.length) eventLines.push(`For ${fallenLabel(f.deaths[f.deaths.length - 1])} fallen, we fight through grief and pain, their name upon our lips as we stand again!`);
@@ -483,13 +510,13 @@ function bpmForMode(mode, f) {
  */
 export function buildTrackRequest({ mode = Mode.TAVERN, rolls = [], chats = [], wounds = [], corruptions = [], deaths = [], bawdy = Bawdy.BAWDY, tavernDuration = 180, combatDuration = 180, loopIndex = 0, songIndex = loopIndex, varietySeed = songIndex, careers = null, story = null, recentVerses = [], requests = null } = {}) {
   const f = extractFeatures(rolls, chats, wounds, corruptions, deaths);
-  const b = bawdyFragment(bawdy);
+  const b = bawdyFragment(bawdy, songIndex);
   const voice = bardVoiceForSong(songIndex);
   const whyParts = [];
   const grief = f.deathCount > 0 || f.critWounds > 0 || f.corruptions > 0;
   const drunken = f.fumbles >= 2 && f.fumbles > f.crits;
   const variety = pickMusicalVariety({ mode, songIndex, seed: varietySeed, forceMinor: grief || drunken, preferMinor: mode === Mode.COMBAT });
-  const loop = { loopIndex, recentVerses, structure: variety.structure, form: loopFormForTemplate(variety.template), hook: variety.loop.hook };
+  const loop = { loopIndex, songIndex, recentVerses, structure: variety.structure, form: loopFormForTemplate(variety.template), hook: variety.loop.hook };
   const dissonance = f.corruptions > 0 ? ", brief discordant detuned strings, one sad sour wrong note that slowly fades" : "";
 
   let bpm, keyScale, timeSignature, duration, prompt, built, title;

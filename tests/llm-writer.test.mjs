@@ -137,3 +137,17 @@ test("loose tiny-model drafts are repaired into the loop, and Criticals are alwa
   const prompt = buildLyricPrompt({ fallbackLyrics: req.lyrics, facts: rollFactsForPrompt(req.features, null), loopSections: req.loopSections, loopHook: req.loopHook });
   assert.match(prompt, /CRITICAL CALLOUT \(mandatory\)/);
 });
+
+test("fitted choruses take the draft's fresh lines; only the hook stays pinned", async () => {
+  const { fitLyricsToLoop } = await import("../scripts/llm-writer.js");
+  const { buildTrackRequest } = await import("../scripts/prompt-engine.js");
+  const req = buildTrackRequest({});
+  const withChorus = "[Verse 1]\nFresh verse line one\nFresh verse line two\nFresh verse line three\n[Chorus]\nA brand-new chorus opener\nHook line sung here";
+  const fitted = fitLyricsToLoop(withChorus, req.lyrics, { loopHook: req.loopHook });
+  assert.match(fitted, /A brand-new chorus opener/, "the draft's chorus line replaces the fixed template opener");
+  assert.ok(!fitted.includes("Pinch a cheek"), "the worn-out fixed chorus opener is gone when the draft offers its own");
+  assert.ok(fitted.includes(req.loopHook), "the loop hook still stays verbatim");
+  const flat = "Fresh verse line one\nFresh verse line two\nFresh verse line three\nFresh verse line four\nFresh verse line five";
+  const fittedFlat = fitLyricsToLoop(flat, req.lyrics, { loopHook: req.loopHook });
+  assert.ok(fittedFlat.includes("Pinch a cheek"), "a draft with no chorus block keeps the template chorus");
+});
