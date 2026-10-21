@@ -8,6 +8,9 @@ export const SMALL_LLM_SYSTEM = [
   "You are a grimdark tavern bard writing ORIGINAL parody songs for a Warhammer-style game.",
   "Parody the *conventions* of a style only: never copy, quote, rewrite, translate or closely imitate any existing song's lyrics, title, hook, chorus or melody, and never name a real song, band or artist.",
   "Everything is grimdark gallows humour: plague, Morr, gallows, mud, taxes, doom — with jokes to lighten it.",
+  "BANNED cosy tavern clichés — never write them: creaking floorboards, flowing/rich/strong ale, raised mugs, clinking tankards, roaring hearths, the winking barmaid. If a draft you are given uses them, replace them.",
+  "Draw each song's images fresh from the grimdark world instead — plague carts, Morr's garden, gallows fruit, witch hunters, rats, pox scars, drowned roads, doomstones, unpaid debts, corpse tolls — and never use the same image twice in one song.",
+  "Write in English only — every word of every line. No German, French or any other language, even for flavour (Warhammer proper names like Sigmar, Morr and Altdorf are fine).",
   "Jokes must punch at dice rolls, careers/roles and fate, never at real people. Invent every line fresh.",
 ].join(" ");
 
@@ -29,6 +32,8 @@ export function buildLyricPrompt({ fallbackLyrics = "", kind = "song", styleId =
     `Rewrite these draft lyrics as a fresh original ${kind === "dirge" ? "funeral dirge (solemn; at most one wry line, no mockery of the dead)" : "grimdark comedy parody song"}.`,
     `Style: ${clip(styleId, 40) || "tavern folk"} in ${clip(keyScale, 20)} (${clip(progression, 60)}), sung by the ${clip(bardLabel, 60) || "bard"}. Bawdy level: ${bawdy} (clean = family-friendly).`,
     "Keep the [Verse]/[Chorus]/[Instrumental] markers and every named character. Keep it singable: short rhymed lines, under 24 lines.",
+    "No stock tavern imagery: no creaking floorboards, ale, mugs, tankards or hearths anywhere — swap any in the draft for fresh grimdark images (plague, Morr, gallows, mud, rats, witch hunters, debts, doom) and use a different image in every verse.",
+    "English only: write every line in English — no German, French or other languages, even for flavour.",
     loopSections.length ? `Preserve the loop blocks exactly: same section tags in the same order and count (${loopSections.map((s) => `[${s}]`).join(" ")}), including any " - Male Bard" / " - Female Bard" / " - Both Bards" qualifiers. Rewrite only the verse words inside each block.` : "",
     loopHook ? `Keep this chorus hook word-for-word in every [Chorus]: "${clip(loopHook, 160)}"` : "",
     facts.some((f) => /^CRITICAL:/.test(f)) ? "CRITICAL CALLOUT (mandatory): shout every CRITICAL fact — include a line beginning \"Critical!\" naming the hero and their roll. Criticals must never pass unremarked." : "",
@@ -43,7 +48,7 @@ export function buildLyricPrompt({ fallbackLyrics = "", kind = "song", styleId =
 
 export function buildJokePrompt({ facts = [], storyLines = [], recentJokes = [], bardLabel = "" } = {}) {
   return [
-    `Invent ONE fresh one-line grimdark tavern joke (spoken by the ${clip(bardLabel, 60) || "bard"}) about dice rolls and careers; under 180 characters, no quotes around it.`,
+    `Invent ONE fresh one-line grimdark tavern joke in English (spoken by the ${clip(bardLabel, 60) || "bard"}) about dice rolls and careers; under 180 characters, no quotes around it.`,
     facts.length ? `Base it on a true fact if you can:\n${facts.map((f) => `- ${f}`).join("\n")}` : "No notable rolls: joke about dice, fate, taxes, Morr or the watch.",
     storyLines.length ? `Or needle a long-term legend: ${clip(storyLines.slice(0, 3).join("; "), 240)}` : "",
     recentJokes.length ? `Do NOT reuse these jokes or their punchlines:\n${recentJokes.slice(-10).map((l) => `- ${clip(l, 120)}`).join("\n")}` : "",

@@ -70,38 +70,39 @@ export function museSignificance(f) {
 // `crowd` restores the full tavern throng, and is used only for break ballads.
 const BAWDY_LINES = {
   clean: {
-    chorus: "Raise your mug and sing along, the night is young and the ale is strong!",
-    verse: "In the corner by the firelight glow, hear the fiddle laugh and the tankards flow.",
+    chorus: "Sing low, sing grim, for the road is long, and Morr keeps time to a travelling song!",
+    verse: "The rain on the Reik and the mud on the road, every traveller carries a heavier load.",
     prompt: "wholesome family-friendly tavern folk song, solo bard with a single cheerful voice, no crowd noise, no background chatter",
     crowd: "cheerful singalong chorus with a merry tavern crowd joining in",
   },
   bawdy: {
-    chorus: "Raise your mug and pinch a cheek, the barmaid winks and the floorboards creak!",
-    verse: "Oh the landlord's daughter with a wink and a sway, keeps the ale and the lads coming back all day.",
+    chorus: "Pinch a cheek and dodge the priest, we'll laugh at doom till the dooming's ceased!",
+    verse: "Oh the landlord's widow keeps a wink and a knife, she'll charm your purse and she'll charm your life.",
     prompt: "bawdy medieval drinking song sung by a solo bard, single lusty vocalist, cheeky double-entendre lyrics, no crowd noise, no group chorus, no background chatter",
-    crowd: "rowdy tavern chorus, townsfolk singing along, clinking tankards",
+    crowd: "rowdy tavern chorus, townsfolk singing along, boots stamping",
   },
   filthy: {
-    chorus: "Raise your mug and slap a thigh, the night gets hotter as the moon rides high!",
-    verse: "Oh the sailor swore he'd be home by ten, but the barmaid's smile made a liar of men.",
+    chorus: "Slap a thigh and damn the dawn, we'll sin till the watch comes hammering on!",
+    verse: "Oh the sailor swore he'd be chaste by ten, but the widow's smile made a liar of men.",
     prompt: "raunchy bawdy tavern drinking song sung by a solo bard, single drunken vocalist, adult innuendo, no crowd noise, no group chorus, no background chatter",
-    crowd: "drunken tavern crowd roaring the chorus, townsfolk hollering along, tankards slamming",
+    crowd: "drunken tavern crowd roaring the chorus, townsfolk hollering along, benches overturning",
   },
 };
 
-/** Two alternating bards; every 4th song is a duet (verses trade, chorus together). */
+/** Two alternating bards in strict rotation; every 5th song is a duet (verses trade, chorus together). */
 export const BARD_VOICES = Object.freeze([
-  Object.freeze({ id: "reikland-male", gender: "male", label: "male Reiklander bard (Bavarian German accent)", tag: "Male Vocal", prompt: "MALE VOCALIST ONLY, absolutely no female vocals: one solo male Reiklander bard, warm deep baritone voice, singing in English with a strong Bavarian German Reikland accent, rolled r consonants, hearty Germanic diction, single male singer throughout" }),
-  Object.freeze({ id: "bretonnian-female", gender: "female", label: "female Bretonnian bard (French accent)", tag: "Female Vocal", prompt: "FEMALE VOCALIST ONLY, absolutely no male vocals: one solo female Bretonnian bard, clear warm alto voice, singing in English with an elegant French Bretonnian accent, soft French vowels, lilting diction, single female singer throughout" }),
+  Object.freeze({ id: "reikland-male", gender: "male", label: "male Reiklander bard (Bavarian German accent)", tag: "Male Vocal", prompt: "MALE VOCALIST ONLY, absolutely no female vocals: one solo male Reiklander bard, warm deep baritone voice, singing in English with a strong Bavarian German Reikland accent, rolled r consonants, hearty Germanic diction, single male singer throughout, ENGLISH ONLY: every sung word is English — the accent colours the pronunciation only, never the words; no German or any other language" }),
+  Object.freeze({ id: "bretonnian-female", gender: "female", label: "female Bretonnian bard (French accent)", tag: "Female Vocal", prompt: "FEMALE VOCALIST ONLY, absolutely no male vocals: one solo female Bretonnian bard, clear warm alto voice, singing in English with an elegant French Bretonnian accent, soft French vowels, lilting diction, single female singer throughout, ENGLISH ONLY: every sung word is English — the accent colours the pronunciation only, never the words; no French or any other language" }),
 ]);
 export const BARD_DUET = Object.freeze({
   id: "bard-duet", gender: "duet", label: "both bards in duet (male Reiklander + female Bretonnian)", tag: "Duet",
-  prompt: "MALE-FEMALE DUET, exactly two singers: a male Reiklander baritone with a Bavarian German accent sings Verse 1, a female Bretonnian alto with a French accent sings Verse 2, both harmonise together on every Chorus, clearly alternating male and female voices",
+  prompt: "MALE-FEMALE DUET, exactly two singers: a male Reiklander baritone with a Bavarian German accent sings Verse 1, a female Bretonnian alto with a French accent sings Verse 2, both harmonise together on every Chorus, clearly alternating male and female voices, both singing ENGLISH lyrics only — the accents colour pronunciation only, never the words",
 });
 export function bardVoiceForSong(songIndex = 0, { duet = false } = {}) {
   const n = Number.isFinite(Number(songIndex)) ? Math.trunc(Number(songIndex)) : 0;
-  if (duet || ((n % 4) + 4) % 4 === 3) return BARD_DUET;
-  return BARD_VOICES[((n % 2) + 2) % 2];
+  const r = ((n % 5) + 5) % 5;
+  if (duet || r === 4) return BARD_DUET;
+  return BARD_VOICES[r % 2];
 }
 /** Make the singer unmissable to ACE: section tags in the lyrics themselves. */
 export function tagLyricsForBard(lyrics, voice) {
@@ -136,7 +137,7 @@ export const MUSICAL_VARIETY = Object.freeze([
   VT("pop-anthem", "big singalong pop-anthem energy", "gleefully overblown tavern pop-anthem parody", ["i", "v", "III", "VII"], "verse-prechorus-chorus-bridge", { bpm: 10, title: "Dice Anthem" }),
   VT("chant-verse", "punchy half-spoken chant verses over a three-chord grind", "mock-heroic chant-song parody", ["i", "VI", "VII"], "chant-verses-big-hook", { bpm: -4, modes: ["tavern", "combat"], title: "One Roll Only" }),
   VT("rock-journey", "building folk-rock journey, quiet verse to roaring peak", "mock-epic stair-climbing rock parody without any borrowed riff", ["i", "VII", "III", "iv", "VI", "V"], "build-to-solo", { bpm: 2, title: "Long Road Rising" }),
-  VT("two-chord-funk", "syncopated two-chord funk vamp, lute chops on the offbeat", "strutting funk-vamp parody", ["i7", "V7"], "vamp-and-breaks", { bpm: 4, title: "Tankard Strut" }),
+  VT("two-chord-funk", "syncopated two-chord funk vamp, lute chops on the offbeat", "strutting funk-vamp parody", ["i7", "V7"], "vamp-and-breaks", { bpm: 4, title: "Gallows Strut" }),
   VT("chorus-first-country", "bright country-folk, chorus first and often", "pleading country-chorus parody", ["i", "III", "VII", "i"], "chorus-first", { bpm: 6, title: "Chorus First, Questions Later" }),
   VT("dance-lift", "folk-dance build into a drum-and-lute lift after each chorus", "festival dance-lift parody played on lute and bodhran", ["vi", "IV", "I", "V"], "verse-prechorus-lift", { bpm: 10, tonality: "major", title: "Wake the Rafters" }),
   VT("jazz-lilt", "swinging folk-jazz lilt, two-chord modal vamp, long solo trade-offs", "smug tavern-jazz parody", ["i", "v7"], "head-solos-head", { bpm: 8, meter: "6", title: "Smug Lilt in Six" }),
@@ -151,7 +152,7 @@ export const MUSICAL_VARIETY = Object.freeze([
   VT("house-loop", "hypnotic four-chord house loop turned into lute and tabor", "tavern house-loop parody", ["vi", "IV", "V", "I"], "loop-and-lift", { bpm: 10, tonality: "major", title: "Loop the Lantern" }),
   VT("pedal-build", "one-chord pedal build, breakdown and release", "mock-electronic build parody with only wood and skin", ["i"], "build-break-release", { bpm: 12, modes: ["combat", "bridge"], title: "Pedal-Tone Panic" }),
   VT("anthem-build", "soaring anthem build, breakdown then a huge final chorus", "overblown festival-anthem parody", ["i", "VI", "III", "VII"], "build-anthem", { bpm: 12, title: "Breakdown Anthem" }),
-  VT("synth-minor", "icy three-chord minor hook with hurdy-gurdy as the synth", "deadpan synth-hook parody on hurdy-gurdy", ["i", "VI", "V"], "hook-verses", { bpm: 8, title: "Cold Hook, Warm Ale" }),
+  VT("synth-minor", "icy three-chord minor hook with hurdy-gurdy as the synth", "deadpan synth-hook parody on hurdy-gurdy", ["i", "VI", "V"], "hook-verses", { bpm: 8, title: "Cold Hook, Cold Grave" }),
   VT("quiet-loud", "quiet-loud two-chord dynamics, whispered verse to shouted chorus", "brooding quiet-loud parody", ["i", "VII"], "quiet-loud-solo", { bpm: 6, title: "Quiet Verse, Loud Doom" }),
   VT("afro-groove", "lilting interlocking hand drums and lute, four-chord sway", "sun-drenched dance-groove parody", ["i", "VI", "III", "VII"], "groove-verses", { bpm: 4, title: "Four Chords and Sunshine" }),
   VT("andalusian-dance", "Andalusian descent with montuno-style plucky lute arpeggios", "flirting southern-dance parody", ["i", "VII", "VI", "V"], "montuno-call-response", { bpm: 10, title: "Andalusian Dice Dance" }),
@@ -191,7 +192,7 @@ export function transformProgression(tokens = [], variant = 0) {
   return { tokens: base, label: "straight" };
 }
 export const STYLE_LOOP_HOOKS = Object.freeze({
-  "pop-anthem": "Every mug in the air for the roll that lights the hall!",
+  "pop-anthem": "Every fist in the air for the roll that lights the hall!",
   "chant-verse": "One chance only — throw it true and shout it loud!",
   "rock-journey": "Every bend in the road makes the chorus climb!",
   "two-chord-funk": "Two chords only and the tavern floor still moves!",
@@ -209,7 +210,7 @@ export const STYLE_LOOP_HOOKS = Object.freeze({
   "house-loop": "Round the loop and show the lantern light!",
   "pedal-build": "One chord rising till the whole den shakes!",
   "anthem-build": "Break it down, then roar it back as one!",
-  "synth-minor": "Cold little hook and a warm cup of ale!",
+  "synth-minor": "Cold little hook and a colder grave!",
   "quiet-loud": "Whisper the verse, then shout down the dark!",
   "afro-groove": "Every hand on the drum makes worry miss a step!",
   "andalusian-dance": "Slow hips, fast hands, let the descent dance!",
@@ -283,7 +284,7 @@ export function pickMusicalVariety({ mode = Mode.TAVERN, songIndex = 0, seed = s
   const chords = chordsForProgression(keyScale, tx.tokens);
   const form = loopFormForTemplate(template);
   const harmony = progressionPlan(keyScale, template.progression, variant);
-  const hook = STYLE_LOOP_HOOKS[template.id] ?? "Hey for the dice and ho for the ale, every roll tells another grim tale!";
+  const hook = STYLE_LOOP_HOOKS[template.id] ?? "Hey for the dice and ho for the doom, every roll tells another grim tale!";
   const loop = {
     styleId: template.id, form: form.label, sections: [...form.sections], hook,
     harmony, sectionText: form.sections.join(" -> "),
@@ -301,7 +302,7 @@ export function pickMusicalVariety({ mode = Mode.TAVERN, songIndex = 0, seed = s
 // Rotating filler verses so consecutive loops of the "same" song sing fresh
 // lines around a stable chorus hook. The bawdy-level verse joins this pool.
 const TAVERN_VERSE_POOL = [
-  "The fire is warm and the benches groan, every wanderer's welcome, no one drinks alone.",
+  "The fire is low and the benches groan, every wanderer's welcome — no one dies alone.",
   "My lute is patched and my boots are thin, but the road keeps rhyming with the state I'm in.",
   "There's a song for the miller and a song for the thief, and a tune for the priest with a hole in his belief.",
   "Oh the moon's on the Reik and the barges glide, with a lantern, a lover, and the turning tide.",
@@ -311,6 +312,14 @@ const TAVERN_VERSE_POOL = [
   "Old Morr keeps a garden and tends it with care, we are all on his list — so refill, don't despair.",
   "The gallows tree blossoms with black little fruit, pass the bottle, good neighbour, and laugh in your boot.",
   "A mutant, a taxman, a priest walk in sore — the taxman is feared by the other two more.",
+  "The witch hunter's knocking with a list and a brand, smile wide, sing sweet, keep your charms off your hand.",
+  "The rats hold court in the cellar below, they have eaten the verdict and taxed what we owe.",
+  "A pox took the miller, a flood took the mill, but the song keeps its chorus and the road climbs still.",
+  "The bridge toll is corpses in the spring when it floods, we pay with our singing and a prayer in the mud.",
+  "Sigmar's hammer hangs rusty and old, yet the fist that still swings it is worth more than gold.",
+  "The dead pay no taxes, the dead owe no rent — the collector from Altdorf has not got the hint.",
+  "A doomstone hums where the old road bends, we whistle straight past it and wave to our ends.",
+  "My shadow grows horns when the moon's at its worst, so I sing to it nightly — better charmed than cursed.",
 ];
 const COMBAT_VERSE_POOL = [
   "Shields together and the drum beats on, hold through the night till the foe is gone!",
@@ -401,7 +410,7 @@ function tavernLyrics(f, bawdy, loop = {}, requests = null, careers = null, stor
   const v = loop.loopIndex ?? 0;
   const eventLines = [];
   if (f.deaths?.length) eventLines.push(`We raise a cup for ${fallenLabel(f.deaths[f.deaths.length - 1])}, lost and gone before, Morr keep their soul forevermore.`);
-  if (requests?.dedication) eventLines.push(`This one's for ${requests.dedication}, by special request, may your dice roll high and your ale be the best!`);
+  if (requests?.dedication) eventLines.push(`This one's for ${requests.dedication}, by special request, may your dice roll high and Morr lose your address!`);
   if (requests?.topic) eventLines.push(`You called for a song of ${requests.topic}, so hear it ring true, I polished this chorus especially for you!`);
   if (f.critActors.length) eventLines.push(critLine(f.critActors[v % f.critActors.length], v, careers, f.critDetails));
   if (f.fumbleActors.length) eventLines.push(fumbleLine(f.fumbleActors[v % f.fumbleActors.length], v, careers, f.fumbleDetails));
@@ -418,7 +427,7 @@ function tavernLyrics(f, bawdy, loop = {}, requests = null, careers = null, stor
     eventLines.push(`And ${story.topFumbler.label} still leads the fumbles with ${story.topFumbler.fumbles}, a crown no sane soul covets or crumbles.`);
   }
   if (!f.critActors.length && !f.fumbleActors.length && f.actors.length) {
-    eventLines.push(`Here's to ${f.actors.slice(0, 3).join(", ")} and the road they tread, may their mugs stay full and their purses well-fed.`);
+    eventLines.push(`Here's to ${f.actors.slice(0, 3).join(", ")} and the road they tread, may their boots stay dry and their graves stay empty.`);
   }
   if (f.keywords.length) {
     const kw = [0, 1, 2].map((i) => f.keywords[(v + i) % f.keywords.length]);
@@ -428,7 +437,7 @@ function tavernLyrics(f, bawdy, loop = {}, requests = null, careers = null, stor
   return loopLyrics({
     pool: [b.verse, ...TAVERN_VERSE_POOL],
     eventLines,
-    chorusLines: [b.chorus, loop.hook ?? "Sing hey for the dice and ho for the ale, every roll tells another fine tale!"],
+    chorusLines: [b.chorus, loop.hook ?? "Sing hey for the dice and ho for the grave, every roll tells a tale of the bold and the brave!"],
     ...loop,
   });
 }
@@ -489,7 +498,7 @@ export function buildTrackRequest({ mode = Mode.TAVERN, rolls = [], chats = [], 
     keyScale = variety.keyScale;
     timeSignature = variety.meter ?? "4";
     duration = combatDuration;
-    prompt = `${voice.prompt}. Fast medieval tavern battle music, grimdark gallows humour, ${variety.phrase}, bright plucky lute lead, driving fiddle, war drum and frame drum, hurdy-gurdy, urgent dance jig, lively and energetic, ${LOOP_TAGS}${requests?.mood?.length ? `, ${requests.mood.join(", ")}` : ""}, ${b.prompt}${dissonance}`;
+    prompt = `${voice.prompt}. Fast medieval tavern battle music, grimdark gallows humour, lyrics sung in English only, ${variety.phrase}, bright plucky lute lead, driving fiddle, war drum and frame drum, hurdy-gurdy, urgent dance jig, lively and energetic, ${LOOP_TAGS}${requests?.mood?.length ? `, ${requests.mood.join(", ")}` : ""}, ${b.prompt}${dissonance}`;
     built = combatLyrics(f, bawdy, loop, requests, careers, story);
     title = variety.titleHint ?? "Combat Jig";
     whyParts.push(`combat → faster (${bpm} BPM, ${keyScale})`);
@@ -498,9 +507,9 @@ export function buildTrackRequest({ mode = Mode.TAVERN, rolls = [], chats = [], 
     timeSignature = drunken ? "3" : (f.crits >= 3 ? "6" : (variety.meter ?? "4"));
     keyScale = variety.keyScale;
     duration = tavernDuration;
-    prompt = `${voice.prompt}. Lively medieval tavern folk, grimdark gallows humour that keeps laughing at doom, ${variety.phrase}, bright plucky lute lead with crisp fingerpicked lute ostinato, fiddle, prominent bodhran and frame drum groove, wooden flute, upbeat toe-tapping energy, dry recording, ${LOOP_TAGS}${requests?.mood?.length ? `, ${requests.mood.join(", ")}` : ""}, ${b.prompt}${dissonance}`;
+    prompt = `${voice.prompt}. Lively medieval tavern folk, grimdark gallows humour that keeps laughing at doom, all lyrics sung in English only, ${variety.phrase}, bright plucky lute lead with crisp fingerpicked lute ostinato, fiddle, prominent bodhran and frame drum groove, wooden flute, upbeat toe-tapping energy, dry recording, ${LOOP_TAGS}${requests?.mood?.length ? `, ${requests.mood.join(", ")}` : ""}, ${b.prompt}${dissonance}`;
     built = tavernLyrics(f, bawdy, loop, requests, careers, story);
-    title = drunken ? "The Drunken Waltz" : (variety.titleHint ?? (f.crits >= 2 ? "Golden Dice Reel" : "Tankard Song"));
+    title = drunken ? "The Drunken Waltz" : (variety.titleHint ?? (f.crits >= 2 ? "Golden Dice Reel" : "Gallows Song"));
     if (drunken) whyParts.push(`${f.fumbles} fumbles → drunken 3/4 waltz`);
     else if (f.crits >= 3) whyParts.push(`${f.crits} crits → jig time (6/8)`);
   }
@@ -567,7 +576,7 @@ export function buildDirgeRequest({ death, dirgeDuration = 180, songIndex = 0, v
     "and if the bards must sing tonight, they'll sing them to the sky.",
   ].join("\n");
   return {
-    prompt: `${BARD_VOICES[((songIndex % 2) + 2) % 2].prompt}. Somber medieval funeral dirge, chord progression ${pickMusicalVariety({ mode: "tavern", songIndex, seed: varietySeed, forceMinor: true }).progressionLabel}, slow solemn mourning lament, sparse plucked lute, low frame drum like a slowing heartbeat, distant tolling hand bell, funeral march, grief and quiet dignity, gentle final cadence fading to silence, no crowd noise, no group chorus, no background chatter`,
+    prompt: `${BARD_VOICES[((songIndex % 2) + 2) % 2].prompt}. Somber medieval funeral dirge with English-only lyrics, chord progression ${pickMusicalVariety({ mode: "tavern", songIndex, seed: varietySeed, forceMinor: true }).progressionLabel}, slow solemn mourning lament, sparse plucked lute, low frame drum like a slowing heartbeat, distant tolling hand bell, funeral march, grief and quiet dignity, gentle final cadence fading to silence, no crowd noise, no group chorus, no background chatter`,
     lyrics: tagLyricsForBard(lyrics, BARD_VOICES[((songIndex % 2) + 2) % 2]),
     verseLines: [],
     bpm: 60,
@@ -658,7 +667,7 @@ export function buildBridgeRequest({ mode = Mode.TAVERN, fromMode = null, rolls 
       ? "bright plucky lute lead and rhythmic lute strumming over a prominent bodhran, frame drum and tabor groove, lively fiddle and wooden flute fills"
       : "bright plucky lute lead with crisp fingerpicked ostinato, prominent bodhran and frame drum groove, lively fiddle fills";
   return {
-    prompt: `lively medieval tavern interlude, grimdark gallows humour in the playing, ${bridgeStyle}, ${instruments}, upbeat toe-tapping danceable groove, energetic plucky lute and drums, ${LOOP_TAGS}${dissonance}${joke ? ", mostly instrumental with one brief spoken tavern joke from the bard, then straight back to lively plucky lute and drums" : ", no vocals, no singing, no lyrics"}`,
+    prompt: `lively medieval tavern interlude, grimdark gallows humour in the playing, ${bridgeStyle}, ${instruments}, upbeat toe-tapping danceable groove, energetic plucky lute and drums, ${LOOP_TAGS}${dissonance}${joke ? ", mostly instrumental with one brief spoken tavern joke in English from the bard, then straight back to lively plucky lute and drums" : ", no vocals, no singing, no lyrics"}`,
     lyrics: joke ? `[Instrumental]\n[Spoken]\n${joke}\n[Instrumental]` : "[Instrumental]",
     verseLines: [],
     instrumental: true,

@@ -11,7 +11,7 @@ import { AceStepClient } from "./ace-client.js";
 import { buildBridgeRequest, buildDirgeRequest, buildTrackRequest, pickMusicalVariety } from "./prompt-engine.js";
 import { careerFromActor, mergeBardRequests } from "./session-log.js";
 import { StoryTracker, buildJokePrompt, buildLyricPrompt, ensureCritCallout, fetchSmallLlmText, fitLyricsToLoop, rollFactsForPrompt, sanitizeLlmJoke, sanitizeLlmLyrics } from "./llm-writer.js";
-import { fetchParodySong } from "./parody.js";
+import { fetchParodyHealth, fetchParodySong } from "./parody.js";
 import { aggregateBreakStats, buildBreakRequest, buildTemplateBallad, fetchSummarizerLyrics } from "./recap.js";
 
 export function escapeHtml(s) {
@@ -80,6 +80,7 @@ export class BardicPlayer {
     this.generation = 0; // bump to cancel in-flight work on Stop
     this.trackSeq = 0;
     this.healthOk = null;
+    this.parodyOk = null;
     this._lastSongIndex = null; // last vocal song heard (bard alternation)
     this._assignedSongIndex = null; // last vocal song composed/queued
     this._varietySeedBase = Math.floor(Math.random() * 1_000_000_000); // per-session style shuffle
@@ -147,7 +148,7 @@ export class BardicPlayer {
       state: this.state, mode: this.mode, generating: this.generating,
       nowPlaying: this.current?.title ?? "—", nextTrack: this.queue[0]?.title ?? (this.generating ? "composing…" : "—"),
       nextKind: this.queue[0] ? (this.queue[0].bridge ? "bridge" : "song") : null,
-      why: this.lastWhy, healthOk: this.healthOk,
+      why: this.lastWhy, healthOk: this.healthOk, parodyOk: this.parodyOk,
       loopIndex: this.loopIndex, bridge: Boolean(this.current?.bridge), queued: this.queue.length,
       bard: this.current?.bard?.label ?? null,
       startedAt: this.current?.startedAt ?? null,
@@ -194,6 +195,7 @@ export class BardicPlayer {
 
   async checkHealth() {
     this.healthOk = await this.ace().healthCheck();
+    this.parodyOk = await fetchParodyHealth({ baseUrl: this.getConfig().parodyBaseUrl });
     this.emit();
     return this.healthOk;
   }
@@ -213,36 +215,45 @@ export class BardicPlayer {
     return resp.path;
   }
 
-  /** Parody-sidecar lyrics for a vocal song, screened into the loop blocks. Null on any failure. */
+  /**
+   * Parody-core lyrics for ANY vocal song — tavern, combat, dirge, break.
+   * The LRCLIB writer is the core lyric writer; the template/small-LLM path
+   * is the fallback. Null on any failure.
+   */
   async parodyLyrics(req, kind, c) {
-    if (kind === Mode.DIRGE || kind === Mode.BREAK || !c.parodyEnabled || !c.parodyBaseUrl) return null;
+    if (!c.parodyBaseUrl) return null;
     if (Date.now() < this._parodyCooldownUntil) return null;
     if (Date.now() < this._urgentUntil) { this.noteWork("parody", "standing down for the urgent switch — GPU reserved for the bard", "Parody hunting resumes on the next song."); return null; }
     try {
-      const facts = rollFactsForPrompt(req.features ?? {}, req.careers ?? null);
+      const isDirge = kind === Mode.DIRGE;
+      const isBreak = kind === Mode.BREAK;
+      const facts = isBreak ? (req.parodyFacts ?? []) : rollFactsForPrompt(req.features ?? {}, req.careers ?? null);
       this.storySummary(req.careers);
       const { party, enemies } = this.partyContext();
-      this.noteWork("parody", `hunting a skeleton fitting ${party.map((p) => p.name).join(", ") || "the party"}${enemies.length ? ` vs ${enemies.map((p) => p.name).join(", ")}` : ""}…`,
-        `Party: ${party.map((p) => `${p.name}${p.career ? ` the ${p.career}` : ""}`).join("; ") || "—"} · Enemy: ${enemies.map((p) => p.name).join("; ") || "—"} · Dice facts: ${facts.join(" | ") || "quiet table"} · Saga lines fed: ${this.story.contextLines().length}`);
+      const huntWhat = isDirge ? `a funeral skeleton for ${req.features?.deaths?.[0]?.actor ?? "the fallen"}` : isBreak ? "a skeleton for the break ballad" : `a skeleton fitting ${party.map((p) => p.name).join(", ") || "the party"}${enemies.length ? ` vs ${enemies.map((p) => p.name).join(", ")}` : ""}`;
+      this.noteWork("parody", `hunting ${huntWhat}…`,
+        `Party: ${party.map((p) => `${p.name}${p.career ? ` the ${p.career}` : ""}`).join("; ") || "—"} · Enemy: ${isDirge ? "— (dirges mock no one)" : enemies.map((p) => p.name).join("; ") || "—"} · ${isBreak ? "Session highlights" : "Dice facts"}: ${facts.join(" | ") || "quiet table"} · Saga lines fed: ${this.story.contextLines().length}`);
       const par = await fetchParodySong({
         baseUrl: c.parodyBaseUrl,
         payload: {
           facts, storyLines: this.story.contextLines(), bardLabel: req.bard?.label ?? "", bawdy: c.bawdy,
           styleId: req.variety?.styleId ?? "", keyScale: req.keyScale ?? "",
           loopSections: req.loopSections ?? [], loopHook: req.loopHook ?? "",
-          party, enemies, mode: kind,
+          party, enemies: isDirge ? [] : enemies, mode: kind,
         },
       });
       const fitted = fitLyricsToLoop(par.lyrics, req.lyrics, { loopHook: req.loopHook ?? "" });
-      const lyrics = (req.features?.crits ?? 0) > 0 || (req.features?.critDetails?.length ?? 0) > 0 ? ensureCritCallout(fitted, req.lyrics) : fitted;
+      const mustMention = isDirge ? (req.features?.deaths?.[0]?.actor ?? null) : null;
+      if (mustMention && !fitted.includes(mustMention)) { this.noteWork("parody", "dirge draft lost the fallen's name — template dirge stands", `The fallen must be named: ${mustMention}. The parody verses are refused when the name does not survive the fit.`); return null; }
+      const lyrics = !isDirge && ((req.features?.crits ?? 0) > 0 || (req.features?.critDetails?.length ?? 0) > 0) ? ensureCritCallout(fitted, req.lyrics) : fitted;
       if (lyrics === req.lyrics) { this.noteWork("parody", "draft had too little usable text — template words stand", `Blocks required: ${(req.loopSections ?? []).join(" → ") || "—"} · Hook kept word-for-word: ${req.loopHook ?? "—"}`); return null; }
       this.noteWork("parody", `${par.fit ?? "skeleton picked"} (track #${par.source?.trackId ?? "?"}) — bards will sing it`,
-        `Skeleton source track #${par.source?.trackId ?? "?"} · Screened against source (no shared line / 5-word run) · Fitted into ${(req.loopSections ?? []).join(" → ") || "the loop blocks"} · Bard: ${req.bard?.label ?? "—"}`);
-      return { ...req, lyrics, llmWritten: true, parodySource: par.source ?? null, parodyFit: par.fit ?? null, why: `${req.why ?? ""}; LRCLIB parody${par.fit ? ` — ${par.fit}` : ""} (skeleton #${par.source?.trackId ?? "?"})` };
+        `Skeleton source track #${par.source?.trackId ?? "?"} · Screened against source (no shared line / 5-word run) · Fitted into ${(req.loopSections ?? []).join(" → ") || "the song's blocks"} · Bard: ${req.bard?.label ?? "—"}`);
+      return { ...req, lyrics, llmWritten: true, parodySource: par.source ?? null, parodyFit: par.fit ?? null, why: `${req.why ?? ""}; LRCLIB parody core${par.fit ? ` — ${par.fit}` : ""} (skeleton #${par.source?.trackId ?? "?"})` };
     } catch (e) {
       this._parodyCooldownUntil = Date.now() + 5 * 60 * 1000;
-      this.noteWork("parody", "writer unreachable — normal writers take this song (5 min cooldown)", `Endpoint: ${c.parodyBaseUrl}`);
-      console.warn(`${MODULE_ID} | parody writer unavailable, using normal writers (5 min cooldown)`, e);
+      this.noteWork("parody", "writer unreachable — fallback writers take this song (5 min cooldown)", `Endpoint: ${c.parodyBaseUrl}`);
+      console.warn(`${MODULE_ID} | parody writer unavailable, using fallback writers (5 min cooldown)`, e);
       return null;
     }
   }

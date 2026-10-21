@@ -118,7 +118,7 @@ export class AceStepClient {
       prompt: p.prompt ?? "",
       lyrics: p.lyrics ?? "",
       thinking: Boolean(p.thinking),
-      vocal_language: p.vocalLanguage ?? "en",
+      vocal_language: "en", // English only — owner's rule, pinned at the API boundary
       audio_format: p.audioFormat ?? "mp3",
       inference_steps: p.inferenceSteps ?? 8,
       use_random_seed: p.seed == null,

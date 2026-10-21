@@ -25,8 +25,9 @@ The music listens to your table:
 - **Two bards, alternating every song — and duetting.** Solo songs swap
   a male Reiklander baritone (Bavarian German accent) and a female
   Bretonnian alto (French accent), stamped into both the ACE prompt and
-  the lyric section tags; every fourth song (and every break ballad) is a
-  duet — verses trade, choruses harmonise. Dirges stay solo.
+  the lyric section tags; solo songs alternate strictly so both bards get
+  equal time, every fifth song (and every break ballad) is a duet —
+  verses trade, choruses harmonise. Dirges stay solo.
 - **A style roulette, grimdark-comedy parodies.** Every song and bridge
   draws an abstract style template (progression, structure, groove) from
   26 genre crafts, transposes it to a fresh key, and often reverses or
@@ -35,14 +36,19 @@ The music listens to your table:
   Neighbouring songs never repeat style or key; improvised lute/fiddle/
   flute solo breaks are built in. Jokes are generated from the actual
   latest rolls/careers and never repeat a recent punchline.
-- **Optional LRCLIB parody writer.** With the parody sidecar running, each
-  vocal song can instead be built on a real song's *skeleton* from a local
-  LRCLIB dump (stanza shapes, syllable counts, rhyme scheme — the source
-  words never leave the GM machine). The lyric/humor/memory LLM picks the
-  skeleton that fits the party and the current enemy (theme tags only;
-  local scoring when the LLM is down), writes fresh grimdark words with
-  the table's dice facts, and the draft is screened against the source
-  before a bard sings it. See [`sidecar/README.md`](sidecar/README.md).
+- **LRCLIB parody core writer.** The parody writer is the core lyric
+  writer for every vocal song — tavern, combat, PC-death dirges and
+  break-recap ballads. Each song is built on a real song's *skeleton* from
+  a local LRCLIB dump (stanza shapes, syllable counts, rhyme scheme — the
+  source words never leave the GM machine). The lyric/humor/memory LLM
+  picks the skeleton that fits the party and the current enemy (theme
+  tags only; local scoring when the LLM is down), writes fresh grimdark
+  words with the table's dice facts, and the draft is screened against
+  the source before a bard sings it. Dirges hunt funeral-fit (solemn)
+  skeletons and must keep the fallen's name; `start-all.sh` launches the
+  writer with the rest of the stack. When it is unreachable, the
+  template/LLM writers take over as the fallback. See
+  [`sidecar/README.md`](sidecar/README.md).
 - **A corner readout of what everyone is doing.** A small panel in the
   bottom-left corner (all clients) shows the current song and how long it
   has left, what is queued next, and the latest BARD / LYRIC / PARODY /

@@ -36,6 +36,7 @@ export class BardicStatusApp extends foundry.applications.api.HandlebarsApplicat
       nowPlaying: s.nowPlaying,
       nextTrack: s.nextTrack,
       healthOk: s.healthOk === true,
+      parodyOk: s.parodyOk === true,
       why: s.why ?? "",
       activity: (s.activity ?? []).slice(-3).map((a) => `${({ bard: "BARD", "lyric-llm": "LYRIC", parody: "PARODY", memory: "MEMORY" })[a.actor] ?? "BARD"}: ${a.text}`),
       isGM: game.user?.isGM === true,

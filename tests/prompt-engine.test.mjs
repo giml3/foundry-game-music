@@ -162,6 +162,12 @@ test("songs alternate male Reiklander and female Bretonnian bards", () => {
   assert.equal(bardVoiceForSong(0).gender, "male");
   assert.equal(bardVoiceForSong(1).gender, "female");
   assert.equal(bardVoiceForSong(2).gender, "male");
+  assert.equal(bardVoiceForSong(3).gender, "female");
+  // Strict rotation over two full cycles: solos split exactly evenly,
+  // a duet lands every fifth song, and solos never repeat a gender.
+  const seq = Array.from({ length: 10 }, (_, i) => bardVoiceForSong(i).gender);
+  assert.deepEqual(seq, ["male", "female", "male", "female", "duet", "male", "female", "male", "female", "duet"]);
+  assert.equal(seq.filter((g) => g === "male").length, seq.filter((g) => g === "female").length);
   const s0 = buildTrackRequest({ songIndex: 0 });
   const s1 = buildTrackRequest({ songIndex: 1 });
   const s2 = buildTrackRequest({ mode: Mode.COMBAT, songIndex: 2 });
@@ -198,8 +204,8 @@ test("variety engine transposes, reverses progressions and never repeats back-to
   assert.ok(pickMusicalVariety({ songIndex: 0, seed: 7 }).phrase.length > 40);
 });
 
-test("every fourth song is a male-female duet; solo songs are explicitly one voice", () => {
-  const duet = buildTrackRequest({ songIndex: 3, varietySeed: 99 });
+test("every fifth song is a male-female duet; solo songs are explicitly one voice", () => {
+  const duet = buildTrackRequest({ songIndex: 4, varietySeed: 99 });
   assert.equal(duet.bard.gender, "duet");
   assert.match(duet.prompt, /MALE-FEMALE DUET/);
   assert.match(duet.lyrics, /Verse 1 - Male Bard/);

@@ -38,7 +38,7 @@ export function registerSettings() {
   s("smallLlmBaseUrl", { name: L("SmallLlmBaseUrl"), hint: L("SmallLlmBaseUrlHint"), scope: "world", config: true, type: String, default: "http://127.0.0.1:11434/v1" });
   s("smallLlmApiKey", { name: L("SmallLlmApiKey"), scope: "world", config: true, type: String, default: "" });
   s("smallLlmModel", { name: L("SmallLlmModel"), hint: L("SmallLlmModelHint"), scope: "world", config: true, type: String, default: "llama3.2:1b" });
-  s("parodyEnabled", { name: L("ParodyEnabled"), hint: L("ParodyEnabledHint"), scope: "world", config: true, type: Boolean, default: false });
+  s("parodyEnabled", { name: L("ParodyEnabled"), hint: L("ParodyEnabledHint"), scope: "world", config: false, type: Boolean, default: true });
   s("parodyBaseUrl", { name: L("ParodyBaseUrl"), hint: L("ParodyBaseUrlHint"), scope: "world", config: true, type: String, default: "http://127.0.0.1:8123" });
   // Hidden persistence: rolling session log survives GM browser refresh.
   s("sessionLogData", { scope: "world", config: false, type: Object, default: { version: 1, checkpointTs: 0, events: [] } });
@@ -51,7 +51,7 @@ export function getConfig() {
     aceBaseUrl: g("aceBaseUrl"), aceApiKey: g("aceApiKey"), aceModel: g("aceModel"),
     inferenceSteps: g("inferenceSteps"), thinking: g("thinking"),
     tavernDuration: g("tavernDuration"), combatDuration: g("combatDuration"), bridgeDuration: g("bridgeDuration"), bridgeLibrary: g("bridgeLibrary"), playerRequests: g("playerRequests"), breakDuration: g("breakDuration"),
-    bawdy: g("bawdyLevel"), autoCombat: g("autoCombat"), vocalLanguage: g("vocalLanguage"),
+    bawdy: g("bawdyLevel"), autoCombat: g("autoCombat"), vocalLanguage: "en", // English only — owner's rule, whatever the stored setting says
     includeSecret: g("includeSecret"), volume: g("volume"), uploadFolder: g("uploadFolder"),
     journalRecap: g("journalRecap"),
     corruptionSting: g("corruptionSting"),
@@ -60,6 +60,7 @@ export function getConfig() {
     summarizerApiKey: g("summarizerApiKey"), summarizerModel: g("summarizerModel"),
     smallLlmEnabled: g("smallLlmEnabled"), smallLlmBaseUrl: g("smallLlmBaseUrl"),
     smallLlmApiKey: g("smallLlmApiKey"), smallLlmModel: g("smallLlmModel"),
-    parodyEnabled: g("parodyEnabled"), parodyBaseUrl: g("parodyBaseUrl"),
+    parodyEnabled: true, // the parody writer is the core lyric writer (v0.5.0) — an empty Parody Writer URL is the off switch
+    parodyBaseUrl: g("parodyBaseUrl"),
   };
 }

@@ -37,6 +37,13 @@ test("setup-llm installs Ollama, pulls the same default model as the module sett
   assert.match(setupBat, /winget install.*Ollama/i);
 });
 
+test("start-all launches the parody core writer when the LRCLIB db is present", () => {
+  const all = readFileSync(join(root, "sidecar", "start-all.sh"), "utf8");
+  assert.match(all, /parody-writer\.mjs/);
+  assert.match(all, /lrclib\.sqlite3/);
+  assert.match(all, /8123/);
+});
+
 test("start scripts keep Ollama bound to localhost", () => {
   assert.match(readFileSync(join(root, "sidecar", "start-llm.sh"), "utf8"), /127\.0\.0\.1:11434/);
   assert.match(readFileSync(join(root, "sidecar", "start-llm.bat"), "utf8"), /127\.0\.0\.1:11434/);

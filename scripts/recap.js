@@ -100,7 +100,7 @@ export function buildTemplateBallad(stats, { bawdy = Bawdy.BAWDY } = {}) {
   );
   if (stats.topCritter) addVerse(
     `Oh ${stats.topCritter.actor} was golden, with ${stats.topCritter.crits} crit${stats.topCritter.crits > 1 ? "s" : ""} shining bright,`,
-    "the tavern roared and raised their mugs each time they rolled it right.",
+    "the tavern roared and stamped their boots each time they rolled it right.",
   );
   if (stats.topFumbler) addVerse(
     `Poor ${stats.topFumbler.actor} fumbled ${stats.topFumbler.fumbles} time${stats.topFumbler.fumbles > 1 ? "s" : ""}, oh the shame, oh the pain,`,
@@ -184,9 +184,10 @@ export function buildBreakRequest({ stats, lyrics, bawdy = Bawdy.BAWDY, breakDur
   const variety = pickMusicalVariety({ mode: "tavern", songIndex, seed: varietySeed, forceMinor: Boolean(stats.deaths?.length) });
   const bpm = Math.round(clamp(110 + ratio * 60 + Math.min(stats.crits, 8) * 2 + variety.bpmShift - (stats.deaths?.length ? 18 : 0), 84, 142));
   return {
-    prompt: `${voice.prompt}. Lively medieval tavern folk ballad, grimdark gallows humour, ${variety.phrase}, storytelling lead bards, bright plucky lute lead, fiddle, prominent bodhran and frame drum, ${b.crowd ?? b.prompt}, group chorus finale`,
+    prompt: `${voice.prompt}. Lively medieval tavern folk ballad, grimdark gallows humour, English-language lyrics only, ${variety.phrase}, storytelling lead bards, bright plucky lute lead, fiddle, prominent bodhran and frame drum, ${b.crowd ?? b.prompt}, group chorus finale`,
     songIndex, bard: voice, variety, varietySeed, aceSeed: hashSeed(`break:${varietySeed}:${songIndex}`),
     lyrics: tagLyricsForBard(lyrics, voice),
+    parodyFacts: [`${stats.totalRolls} rolls tonight: ${stats.crits} crits, ${stats.fumbles} fumbles, ${stats.combats} combat${stats.combats === 1 ? "" : "s"}${stats.critWounds ? `, ${stats.critWounds} critical wounds` : ""}${stats.deaths?.length ? `, ${stats.deaths.length} death${stats.deaths.length === 1 ? "" : "s"}` : ""} in ~${stats.spanMinutes} minutes`, ...(stats.highlights ?? [])].slice(0, 8),
     bpm,
     keyScale: variety.keyScale,
     timeSignature: variety.meter ?? "4",

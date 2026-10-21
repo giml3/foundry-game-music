@@ -2,7 +2,7 @@
   "id": "foundry-game-music",
   "title": "Bardic Dice \u2014 ACE-Step Tavern Music",
   "description": "Generates bawdy tavern music with a local ACE-Step 1.5 sidecar, steered by live dice rolls and chat. Long vocal songs loop with fresh verses each lap, joined by instrumental bridges that pad time and blend styles. Speeds up in combat, stings on Corruption (WFRP4e), and sings a recap ballad of the last 2-3 hours on break.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "authors": [
     {
       "name": "giml3",

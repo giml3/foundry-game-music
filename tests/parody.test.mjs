@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { buildParodyPrompt, fetchParodySong, lyricSkeleton, screenParodyLyrics, syllableCount } from "../scripts/parody.js";
-import { handleParody, pickRandomTrack } from "../sidecar/parody-writer.mjs";
+import { handleParody, pickRandomTrack, solemnScore } from "../sidecar/parody-writer.mjs";
 
 const SOURCE = [
   "[00:12.00]Shiny words on a silver line tonight",

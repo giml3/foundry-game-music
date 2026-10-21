@@ -62,11 +62,31 @@ export function lyricSkeleton(plainLyrics, { maxStanzas = 6, maxLines = 28 } = {
 /** Prompt for the purpose-built tiny LLM. Contains no source wording. */
 export function buildParodyPrompt({ skeleton, facts = [], storyLines = [], bardLabel = "", bawdy = "bawdy", styleId = "", keyScale = "", loopSections = [], loopHook = "", party = [], enemies = [], mode = "tavern" } = {}) {
   const partyLine = party.length ? `Party (cheer them, name them): ${party.map((p) => `${p.name ?? "?"}${p.career ? ` the ${p.career}` : ""}`).join("; ")}.` : "";
-  const enemyLine = enemies.length ? `Current enemy (mock them mercilessly${mode === "combat" ? ", this is a battle song against them" : ""}): ${enemies.map((p) => `${p.name ?? "?"}${p.type ? ` (${p.type})` : ""}`).join("; ")}.` : "";
+  const enemyLine = mode === "dirge" || !enemies.length ? "" : `Current enemy (mock them mercilessly${mode === "combat" ? ", this is a battle song against them" : ""}): ${enemies.map((p) => `${p.name ?? "?"}${p.type ? ` (${p.type})` : ""}`).join("; ")}.`;
   const shape = (skeleton?.stanzas ?? []).map((s, i) => `Stanza ${i + 1}: ${s.lines} lines, syllables ${s.syllables.join("/")}, rhyme scheme ${s.scheme}`).join("\n");
+  const opening = mode === "dirge"
+    ? "Write an ORIGINAL solemn funeral dirge for a Warhammer-style game, built on the song skeleton below (a classic song's stanza shapes, line lengths and rhyme scheme — its words are deliberately withheld; invent every word yourself). Solemn and reverent: no mockery of the dead, no jokes at the fallen's expense; at most one wry line about fate."
+    : mode === "break"
+      ? "Write an ORIGINAL grimdark recap ballad for a Warhammer-style game, built on the song skeleton below (a classic song's stanza shapes, line lengths and rhyme scheme — its words are deliberately withheld; invent every word yourself). It recaps what the table just lived through."
+      : "Write an ORIGINAL grimdark tavern parody song for a Warhammer-style game, built on the song skeleton below (a classic song's stanza shapes, line lengths and rhyme scheme — its words are deliberately withheld; invent every word yourself).";
+  const factsLine = facts.length
+    ? mode === "dirge"
+      ? `Work THESE true facts into the dirge — name the fallen exactly as written and honour their career:\n${facts.map((f) => `- ${f}`).join("\n")}`
+      : mode === "break"
+        ? `Work THESE true session highlights into the ballad — name the people and events:\n${facts.map((f) => `- ${f}`).join("\n")}`
+        : `Work THESE true dice facts into fresh jokes (do not invent other heroes):\n${facts.map((f) => `- ${f}`).join("\n")}`
+    : mode === "dirge"
+      ? "Mourn the fallen generally: Morr, the long road, the tolling bell."
+      : mode === "break"
+        ? "A quiet stretch to recap: joke about dice, fate, taxes and Morr generally."
+        : "No big rolls lately: joke about dice, fate, taxes and Morr generally.";
   return [
-    "Write an ORIGINAL grimdark tavern parody song for a Warhammer-style game, built on the song skeleton below (a classic song's stanza shapes, line lengths and rhyme scheme — its words are deliberately withheld; invent every word yourself).",
-    "Parody the conventions and shape only: never copy, quote, rewrite or closely imitate any existing song's lyrics, title, hook or melody, and never name a real song, band or artist. Grimdark gallows humour: plague, Morr, gallows, mud, taxes, doom — with jokes to lighten it.",
+    opening,
+    mode === "dirge"
+      ? "Parody the conventions and shape only: never copy, quote, rewrite or closely imitate any existing song's lyrics, title, hook or melody, and never name a real song, band or artist. Grimdark and mournful: plague, Morr, gallows, mud, doom — carried with dignity."
+      : "Parody the conventions and shape only: never copy, quote, rewrite or closely imitate any existing song's lyrics, title, hook or melody, and never name a real song, band or artist. Grimdark gallows humour: plague, Morr, gallows, mud, taxes, doom — with jokes to lighten it.",
+    "No stock tavern imagery: no creaking floorboards, ale, mugs, tankards, hearths or winking barmaids. Draw fresh grimdark images instead (plague carts, Morr's garden, gallows fruit, witch hunters, rats, pox, drowned roads, debts, doomstones) and never repeat an image within the song.",
+    "Write in English only — every line; no German, French or other languages, even for flavour (Warhammer proper names are fine).",
     shape ? `Skeleton (match these stanza shapes, syllable counts and rhyme schemes):\n${shape}` : "Skeleton: four-line stanzas, about 8 syllables a line, ABAB rhymes.",
     `Style: ${clip(styleId, 40) || "tavern folk"} in ${clip(keyScale, 20)}, sung by the ${clip(bardLabel, 60) || "bard"}. Bawdy level: ${bawdy} (clean = family-friendly).`,
     loopSections.length ? `Fit the words into exactly these loop blocks, same tags in the same order and count: ${loopSections.map((s) => `[${s}]`).join(" ")}. Keep any " - Male Bard" / " - Female Bard" / " - Both Bards" qualifiers.` : "Use [Verse]/[Chorus] markers.",
@@ -74,7 +94,7 @@ export function buildParodyPrompt({ skeleton, facts = [], storyLines = [], bardL
     partyLine,
     enemyLine,
     facts.some((f) => /^CRITICAL:/.test(f)) ? "CRITICAL CALLOUT (mandatory): shout every CRITICAL fact — include a line beginning \"Critical!\" naming the hero and their roll." : "",
-    facts.length ? `Work THESE true dice facts into fresh jokes (do not invent other heroes):\n${facts.map((f) => `- ${f}`).join("\n")}` : "No big rolls lately: joke about dice, fate, taxes and Morr generally.",
+    factsLine,
     storyLines.length ? `Long-term saga (drop at most one callback):\n${storyLines.slice(0, 5).map((l) => `- ${clip(l, 140)}`).join("\n")}` : "",
     "Return ONLY the parody lyrics.",
   ].filter(Boolean).join("\n");
@@ -161,6 +181,22 @@ export async function fetchParodySong({ baseUrl, fetchImpl = null, timeoutMs = 2
     const json = await res.json();
     if (!json?.lyrics) throw new Error("Parody sidecar returned no lyrics");
     return { lyrics: String(json.lyrics), source: json.source ?? null, skeleton: json.skeleton ?? null, fit: json.fit ?? null };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** True when the parody core writer answers /health. Never throws. */
+export async function fetchParodyHealth({ baseUrl, fetchImpl = null, timeoutMs = 4000 } = {}) {
+  if (!baseUrl) return false;
+  const doFetch = fetchImpl ?? ((...a) => globalThis.fetch(...a));
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  try {
+    const res = await doFetch(`${String(baseUrl).replace(/\/+$/, "")}/health`, { ...(ctrl ? { signal: ctrl.signal } : {}) });
+    return Boolean(res?.ok);
+  } catch {
+    return false;
   } finally {
     if (timer) clearTimeout(timer);
   }

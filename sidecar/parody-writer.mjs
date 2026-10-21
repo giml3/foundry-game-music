@@ -14,7 +14,8 @@
 // Run:
 //   node sidecar/parody-writer.mjs --db lrclib.sqlite3 [--port 8123]
 //   PARODY_DB=lrclib.sqlite3 node sidecar/parody-writer.mjs
-// Then enable "LRCLIB Parody Writer" in the module settings.
+// The module treats this writer as its core lyric writer (v0.5.0) —
+// start-all.sh launches it automatically when the database is present.
 import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
@@ -87,13 +88,30 @@ export async function chooseFit(pool, body = {}, { callLlm } = {}) {
   };
 }
 
+/** Themes that make a skeleton funeral-fit for a dirge. */
+export const SOLEMN_TAGS = new Set(["death", "dead", "die", "dying", "grave", "graves", "gone", "farewell", "goodbye", "angel", "angels", "heaven", "home", "rest", "sleep", "tears", "cry", "mother", "father", "sailor", "sea", "river", "winter", "snow", "rain", "night", "dark", "cold", "stone", "bell", "bells", "prayer", "amen", "lord", "soul", "spirit", "ghost", "memory", "remember", "lost", "fall", "fallen", "blood", "war", "soldier", "battle", "road", "dust", "ashes", "earth", "sky", "stars", "moon"]);
+
+export function solemnScore(tags = []) {
+  return tags.reduce((n, t) => n + (SOLEMN_TAGS.has(String(t).toLowerCase()) ? 1 : 0), 0);
+}
+
 /** One screened parody. `callLlm(prompt)` is injectable for tests. */
 export async function handleParody(db, body = {}, { callLlm, rng = Math.random } = {}) {
   const party = Array.isArray(body.party) ? body.party.slice(0, 8) : [];
   const enemies = Array.isArray(body.enemies) ? body.enemies.slice(0, 8) : [];
-  const pool = collectCandidates(db, rng, party.length || enemies.length ? 12 : 1);
+  const mode = body.mode ?? "tavern";
+  const pool = collectCandidates(db, rng, mode === "dirge" ? 24 : (party.length || enemies.length ? 12 : 1));
   if (!pool.length) throw new Error("No usable song found in the LRCLIB dump");
-  const { pick, fitReason } = await chooseFit(pool, body, { callLlm });
+  let pick = null;
+  let fitReason = null;
+  if (mode === "dirge") {
+    const ranked = pool.map((c) => ({ c, s: solemnScore(c.tags) })).sort((a, b) => b.s - a.s);
+    if (ranked[0]?.s > 0) {
+      pick = ranked[0].c;
+      fitReason = `funeral-fit skeleton (solemn themes: ${pick.tags.filter((t) => SOLEMN_TAGS.has(String(t).toLowerCase())).slice(0, 4).join(", ")})`;
+    }
+  }
+  if (!pick) ({ pick, fitReason } = await chooseFit(pool, body, { callLlm }));
   const track = pick.track;
   const skeleton = pick.skeleton;
   if (!skeleton.lineCount) throw new Error("Picked song has no usable lyric skeleton");

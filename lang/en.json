@@ -38,7 +38,7 @@
       "AutoCombat": "Auto Combat Music",
       "AutoCombatHint": "Switch to the faster combat profile when combat starts, back to tavern when it ends.",
       "VocalLanguage": "Lyrics Language",
-      "VocalLanguageHint": "ISO code passed to ACE-Step, e.g. en, zh, ja, de.",
+      "VocalLanguageHint": "English only — enforced in code; this setting is ignored.",
       "IncludeSecret": "Include Secret/GM Rolls in the Muse",
       "IncludeSecretHint": "Off by default: whispers and secret rolls never steer the music or leave the table.",
       "SummarizerEnabled": "Enable External LLM Recap Writer",
@@ -69,10 +69,10 @@
       "BridgeLibraryHint": "Play pregenerated lively plucky-lute interludes from the <upload folder>/library (see sidecar/pregenerate-bridges.mjs) instead of generating bridges live. Falls back to live generation when the library is empty.",
       "PlayerRequests": "Player Song Requests (!bard)",
       "PlayerRequestsHint": "Players can type requests in chat — \"!bard sing about dragons, faster, for Aria!\" — and the bards answer in chat and steer the next song (tempo, mood, topic, dedication, instrumental).",
-      "ParodyEnabled": "LRCLIB Parody Writer",
-      "ParodyEnabledHint": "The parody sidecar (sidecar/parody-writer.mjs) picks a random song from your local LRCLIB dump, reduces it to a stanza/syllable/rhyme skeleton (source words never leave the GM machine), and the tiny LLM writes an original grimdark parody on that skeleton with your dice facts. Drafts sharing a line or 5-word run with the source are refused. Falls back to the normal writers when unreachable.",
+      "ParodyEnabled": "LRCLIB Parody Core Writer",
+      "ParodyEnabledHint": "Always on: the parody writer is the core lyric writer for every song — tavern, combat, dirges and break ballads. It picks a song skeleton from your local LRCLIB dump (source words never leave the GM machine) and the tiny LLM writes original grimdark words on it with your dice facts; drafts sharing a line or 5-word run with the source are refused. Falls back to the template/LLM writers when unreachable. Clear the Parody Writer URL to disable.",
       "ParodyBaseUrl": "Parody Writer URL",
-      "ParodyBaseUrlHint": "Default is the local parody sidecar. Run sidecar/start-parody.sh (needs lrclib.sqlite3 — see sidecar/README.md)."
+      "ParodyBaseUrlHint": "Default is the local parody sidecar, started by sidecar/start-all.sh (needs lrclib.sqlite3 — see sidecar/README.md)."
     }
   }
 }

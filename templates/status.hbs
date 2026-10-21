@@ -7,6 +7,9 @@
   <div class="bd-row"><span class="bd-label">ACE-Step</span>
     {{#if healthOk}}<span class="bd-health-ok">● reachable</span>{{else}}<span class="bd-health-bad">● unreachable</span>{{/if}}
   </div>
+  <div class="bd-row"><span class="bd-label">Parody core</span>
+    {{#if parodyOk}}<span class="bd-health-ok">● ready</span>{{else}}<span class="bd-health-bad">● unreachable — fallback writers</span>{{/if}}
+  </div>
   <div class="bd-row"><span class="bd-label">Session log</span><span>{{logSummary}}</span></div>
   {{#if why}}<p class="bd-why">♪ {{why}}</p>{{/if}}
   {{#each activity}}<div class="bd-row"><span class="bd-label">Activity</span><span>{{this}}</span></div>{{/each}}

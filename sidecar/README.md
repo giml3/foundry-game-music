@@ -97,17 +97,20 @@ sung.
 # One-time (large — check disk space first; the .gz in the repo root is ~45 GB):
 gzip -dc lrclib-db-dump-20261012T090639Z.sqlite3.gz > lrclib.sqlite3
 
-# Every session (Ollama must be running too):
-./start-parody.sh        # foreground — Ctrl-C stops it (Windows: start-parody.bat)
+# Every session: ./start-all.sh launches the writer in the background
+# alongside Ollama and ACE-Step. Standalone run (foreground):
+./start-parody.sh        # Ctrl-C stops it (Windows: start-parody.bat)
 curl http://127.0.0.1:8123/health
 ```
 
-Then enable *LRCLIB Parody Writer* in Module Settings → Bardic Dice
-(URL default `http://127.0.0.1:8123`). Vocal songs (never dirges or break
-ballads) will sing screened parodies fitted into each style loop's blocks
-and hook; the Status "why" names the skeleton's track id. Any failure
-falls back silently to the tiny-LLM/template writers with a 5-minute
-cooldown.
+The writer is the module's core lyric writer — no setting to enable
+(URL default `http://127.0.0.1:8123`; clear the URL in Module Settings
+to disable). Every vocal song — tavern, combat, PC-death dirges and
+break-recap ballads — sings a screened parody fitted into the song's
+blocks and hook; the Status "why" names the skeleton's track id. Dirges
+hunt funeral-fit (solemn-themed) skeletons and are refused if the
+fallen's name does not survive the fit. Any failure falls back silently
+to the tiny-LLM/template writers with a 5-minute cooldown.
 Song choice is fitted, not blind: the writer samples a pool of random
 candidates, reduces each to theme tags (kept on this machine), and asks
 the tiny LLM to pick the skeleton fitting the party's careers and the
